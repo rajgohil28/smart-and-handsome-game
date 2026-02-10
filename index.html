@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, viewport-fit=cover" />
+    <title>Smart and Handsome Bike Game</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Phaser 3 for HTML5 2D creative (local, no CDN) -->
+    <script src="assets/phaser.min.js"></script>
+  </head>
+  <body>
+    <!-- Landscape-only prompt shown in portrait -->
+    <div class="rotate-prompt" id="rotate-prompt">
+      <div class="rotate-inner">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        <p>Please rotate your device to landscape</p>
+      </div>
+    </div>
+
+    <main class="wrap" id="game-wrap">
+      <div id="game-container" aria-label="Bike game"></div>
+      <div class="hud" aria-live="polite">
+        <div class="hud-row">
+          <span id="score">Score: 0</span>
+          <span id="lives">Lives: 3</span>
+        </div>
+        <div class="hud-row">
+          <span id="state">Tap anywhere to wheelie</span>
+        </div>
+      </div>
+      <div class="overlay" id="overlay">
+        <h1>Smart & Handsome Bike Game</h1>
+        <p>Tap anywhere to perform a 1-second wheelie.</p>
+        <button id="start">Start</button>
+      </div>
+    </main>
+    <script src="src/game.js"></script>
+  </body>
+</html>

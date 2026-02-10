@@ -1,0 +1,141 @@
+:root {
+  color-scheme: light;
+  --accent: #c6422c;
+  --text: #1b1b1b;
+  --hud-bg: rgba(255, 255, 255, 0.85);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  touch-action: none;
+  background: #1b1b1b;
+}
+
+body {
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif;
+  color: var(--text);
+  /* No flex on body to avoid layout side-effects */
+  display: block; 
+}
+
+/* ---------- Game wrapper ---------- */
+.wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  display: block; /* Default visible */
+}
+
+#game-container {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#game-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--hud-bg);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: clamp(11px, 1.8vw, 16px);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ---------- Overlay ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+  background: rgba(255, 250, 245, 0.92);
+  font-size: clamp(14px, 2vw, 18px);
+  z-index: 30;
+}
+
+.overlay h1 {
+  font-size: clamp(18px, 3vw, 28px);
+  letter-spacing: 0.02em;
+}
+
+.overlay button {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: clamp(14px, 2vw, 18px);
+  padding: 12px 24px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.overlay button:hover {
+  filter: brightness(0.95);
+}
+
+/* ---------- Rotate-to-landscape prompt ---------- */
+.rotate-prompt {
+  display: none; /* Controlled by JS now */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  background: #1b1b1b;
+  color: #fff;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.rotate-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.rotate-inner svg {
+  animation: tilt 1.5s ease-in-out infinite alternate;
+}
+
+.rotate-inner p {
+  font-size: 18px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+@keyframes tilt {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(90deg); }
+}
