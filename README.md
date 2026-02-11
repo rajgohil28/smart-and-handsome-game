@@ -1,17 +1,18 @@
 # Smart and Handsome Bike Game
 
-HTML5 canvas prototype designed for AdMob creatives. No external libraries or CDNs.
+HTML5 Phaser 3 game designed for AdMob creatives. No build step, no CDN — all assets are local.
 
 ## Game Loop
 - Tap anywhere to perform a 1-second wheelie.
-- Collect face-wash ingredients on the ground in normal state.
-- Collect face-wash ingredients in the air only while wheelie.
-- Pollutant enemies hurt the player when grounded.
-- While wheelie, touching enemies destroys them.
+- Collect skincare ingredients (Niacinamide & Methanol) to earn points.
+- Virus enemies hurt the player when grounded (costs a life).
+- While in a wheelie, hitting enemies destroys them for bonus points (+3).
+- Reach a score of 60 to win, or lose all 3 lives for game over.
 
 ## Run
-Open `index.html` in a browser.
+Open `index.html` in a browser (no server required).
 
 ## Notes
-- Designed for a 9:16 portrait canvas and mobile touch.
-- All art is simple vector-style drawing via canvas for easy customization.
+- Designed for **landscape** orientation on mobile — a rotate prompt is shown in portrait.
+- Uses Phaser 3 with sprite-based assets (PNG spritesheets and images).
+- Motorcycle engine sound plays during gameplay and pauses when switching tabs.

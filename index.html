@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, viewport-fit=cover" />
     <title>Smart and Handsome Bike Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <!-- Phaser 3 for HTML5 2D creative (local, no CDN) -->
     <script src="assets/phaser.min.js"></script>
@@ -29,9 +32,18 @@
         </div>
       </div>
       <div class="overlay" id="overlay">
-        <h1>Smart & Handsome Bike Game</h1>
-        <p>Tap anywhere to perform a 1-second wheelie.</p>
-        <button id="start">Start</button>
+        <div class="overlay-logo">
+          <span class="overlay-logo-line">SMART AND</span>
+          <span class="overlay-logo-line">HANDSOME</span>
+        </div>
+        <div class="overlay-center">
+          <h1 class="overlay-title">THE DIRT DOGER</h1>
+          <button id="start" class="overlay-btn">
+            <span>TAP TO START</span>
+            <svg class="overlay-cursor" width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M5 3l14 9-6 1.5L9.5 20z"/></svg>
+          </button>
+          <p class="overlay-tagline">Instant brightness, instant freshness</p>
+        </div>
       </div>
     </main>
     <script src="src/game.js"></script>
