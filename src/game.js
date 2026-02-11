@@ -240,14 +240,9 @@
         this.endCreditsImg.setPosition(w / 2, h / 2);
         this.endCreditsImg.setDisplaySize(w, h);
       }
-      const btnSpacing = Math.min(w * 0.15, 150);
-      if (this.endBtnText) {
-        this.endBtnText.setPosition(w / 2 - btnSpacing, h * 0.8);
-        if (this.endBtnBg) this.endBtnBg.setPosition(this.endBtnText.x, this.endBtnText.y);
-      }
-      if (this.skipBtnText) {
-        this.skipBtnText.setPosition(w / 2 + btnSpacing, h * 0.8);
-        if (this.skipBtnBg) this.skipBtnBg.setPosition(this.skipBtnText.x, this.skipBtnText.y);
+      if (this.visitBtnText) {
+        this.visitBtnText.setPosition(w / 2, h * 0.8);
+        if (this.visitBtnBg) this.visitBtnBg.setPosition(this.visitBtnText.x, this.visitBtnText.y);
       }
     }
 
@@ -334,9 +329,8 @@
       const padX = btnFontSize * 2;
       const padY = btnFontSize * 1.2;
 
-      // "Play Again" button
-      const btnSpacing = Math.min(w * 0.15, 150);
-      this.endBtnText = this.add.text(w / 2 - btnSpacing, h * 0.8, "PLAY AGAIN", {
+      // "Visit Site" button
+      this.visitBtnText = this.add.text(w / 2, h * 0.8, "VISIT SITE", {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: btnFontSize + "px",
         fontStyle: "bold",
@@ -345,56 +339,28 @@
         stroke: '#000000',
         strokeThickness: 4
       });
-      this.endBtnText.setOrigin(0.5);
-      this.endBtnText.setDepth(104);
-      this.endBtnText.setAlpha(0);
+      this.visitBtnText.setOrigin(0.5);
+      this.visitBtnText.setDepth(104);
+      this.visitBtnText.setAlpha(0);
 
-      this.endBtnBg = this.add.rectangle(
-        this.endBtnText.x, this.endBtnText.y,
-        this.endBtnText.width + padX,
-        this.endBtnText.height + padY,
+      this.visitBtnBg = this.add.rectangle(
+        this.visitBtnText.x, this.visitBtnText.y,
+        this.visitBtnText.width + padX,
+        this.visitBtnText.height + padY,
         0xc6422c
       );
-      this.endBtnBg.setOrigin(0.5);
-      this.endBtnBg.setDepth(103);
-      this.endBtnBg.setAlpha(0);
-      this.endBtnBg.setInteractive({ useHandCursor: true });
-      this.endBtnBg.on("pointerover", () => this.endBtnBg.setFillStyle(0xa83520));
-      this.endBtnBg.on("pointerout", () => this.endBtnBg.setFillStyle(0xc6422c));
-      this.endBtnBg.on("pointerdown", () => this.startGame());
-
-      // "Skip" button
-      this.skipBtnText = this.add.text(w / 2 + btnSpacing, h * 0.8, "SKIP", {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: btnFontSize + "px",
-        fontStyle: "bold",
-        color: "#ffffff",
-        align: "center",
-        stroke: '#000000',
-        strokeThickness: 4
-      });
-      this.skipBtnText.setOrigin(0.5);
-      this.skipBtnText.setDepth(104);
-      this.skipBtnText.setAlpha(0);
-
-      this.skipBtnBg = this.add.rectangle(
-        this.skipBtnText.x, this.skipBtnText.y,
-        this.skipBtnText.width + padX,
-        this.skipBtnText.height + padY,
-        0x444444
-      );
-      this.skipBtnBg.setOrigin(0.5);
-      this.skipBtnBg.setDepth(103);
-      this.skipBtnBg.setAlpha(0);
-      this.skipBtnBg.setInteractive({ useHandCursor: true });
-      this.skipBtnBg.on("pointerover", () => this.skipBtnBg.setFillStyle(0x666666));
-      this.skipBtnBg.on("pointerout", () => this.skipBtnBg.setFillStyle(0x444444));
-      this.skipBtnBg.on("pointerdown", () => {
+      this.visitBtnBg.setOrigin(0.5);
+      this.visitBtnBg.setDepth(103);
+      this.visitBtnBg.setAlpha(0);
+      this.visitBtnBg.setInteractive({ useHandCursor: true });
+      this.visitBtnBg.on("pointerover", () => this.visitBtnBg.setFillStyle(0xa83520));
+      this.visitBtnBg.on("pointerout", () => this.visitBtnBg.setFillStyle(0xc6422c));
+      this.visitBtnBg.on("pointerdown", () => {
         window.location.href = "https://www.emamiltd.in/brands/smart-and-handsome/";
       });
 
       // Fade in everything together
-      const fadeTargets = [this.endCreditsImg, this.endBtnBg, this.endBtnText, this.skipBtnBg, this.skipBtnText];
+      const fadeTargets = [this.endCreditsImg, this.visitBtnBg, this.visitBtnText];
 
       this.tweens.add({
         targets: fadeTargets,
@@ -406,10 +372,8 @@
     hideEndScreen() {
       if (this.endCreditsImg) { this.endCreditsImg.destroy(); this.endCreditsImg = null; }
       if (this.endCreditsBox) { this.endCreditsBox.destroy(); this.endCreditsBox = null; }
-      if (this.endBtnBg) { this.endBtnBg.destroy(); this.endBtnBg = null; }
-      if (this.endBtnText) { this.endBtnText.destroy(); this.endBtnText = null; }
-      if (this.skipBtnBg) { this.skipBtnBg.destroy(); this.skipBtnBg = null; }
-      if (this.skipBtnText) { this.skipBtnText.destroy(); this.skipBtnText = null; }
+      if (this.visitBtnBg) { this.visitBtnBg.destroy(); this.visitBtnBg = null; }
+      if (this.visitBtnText) { this.visitBtnText.destroy(); this.visitBtnText = null; }
 
       // Hide lottie container if it's active
       if (lottieContainer) {
