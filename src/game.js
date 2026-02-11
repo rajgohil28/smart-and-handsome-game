@@ -169,7 +169,7 @@
       this.bg.tileScaleX = bgScale;
       this.bg.tileScaleY = bgScale;
 
-      this.player = this.add.sprite((w || 1280) * 0.18 + 30, this.groundY, "bike");
+      this.player = this.add.sprite((w || 1280) * 0.18 + 60, this.groundY, "bike");
       this.player.setOrigin(0.15, 0.95);
       this.player.setDepth(10);
       this.player.displayWidth = BIKE_DISPLAY_W;
@@ -186,7 +186,7 @@
       this.ingredients = this.add.group();
       this.enemies = this.add.group();
 
-      this.tube = this.add.image(-100, h / 2 + 50, "tube");
+      this.tube = this.add.image(-70, h / 2 + 50, "tube");
       this.tube.setOrigin(0, 0.5);
       this.tube.setDepth(50); // Below end screen layer
       const tubeTargetH = h * 0.7;
@@ -213,30 +213,30 @@
         this.bg.tileScaleY = s;
       }
       if (this.player) {
-        this.player.x = w * 0.18 + 30;
+        this.player.x = w * 0.18 + 60;
         this.player.y = this.groundY;
       }
 
       if (this.tube) {
-        this.tube.setPosition(-100, h / 2 + 50);
+        this.tube.setPosition(-70, h / 2 + 50);
         const tubeTargetH = h * 0.7;
         this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
       }
 
       // Reposition end screen elements on resize
       if (this.endCreditsImg) {
-        const boxW = Math.min(w * 0.85, 800);
-        const boxH = Math.min(h * 0.6, 450);
-        this.endCreditsImg.setPosition(w / 2, h * 0.42);
-        this.endCreditsImg.setDisplaySize(boxW, boxH);
-        if (this.endCreditsBox) {
-          this.endCreditsBox.setPosition(w / 2, h * 0.42);
-          this.endCreditsBox.setSize(boxW + 10, boxH + 10);
-        }
+        this.endCreditsImg.setPosition(w / 2, h / 2);
+        this.endCreditsImg.setDisplaySize(w, h);
       }
-      if (this.endTitleText) this.endTitleText.setPosition(w / 2, h * 0.15);
-      if (this.endBtnBg) this.endBtnBg.setPosition(w / 2, h * 0.8);
-      if (this.endBtnText) this.endBtnText.setPosition(w / 2, h * 0.8);
+      const btnSpacing = Math.min(w * 0.15, 150);
+      if (this.endBtnText) {
+        this.endBtnText.setPosition(w / 2 - btnSpacing, h * 0.8);
+        if (this.endBtnBg) this.endBtnBg.setPosition(this.endBtnText.x, this.endBtnText.y);
+      }
+      if (this.skipBtnText) {
+        this.skipBtnText.setPosition(w / 2 + btnSpacing, h * 0.8);
+        if (this.skipBtnBg) this.skipBtnBg.setPosition(this.skipBtnText.x, this.skipBtnText.y);
+      }
     }
 
     setupInput() {
@@ -261,7 +261,7 @@
       this.hideEndScreen();
 
       if (this.player) {
-        this.player.x = this.scale.width * 0.18 + 30;
+        this.player.x = this.scale.width * 0.18 + 60;
         this.player.y = this.groundY;
         this.player.angle = 0;
         this.player.setVisible(true);
@@ -302,38 +302,20 @@
       const w = this.scale.width;
       const h = this.scale.height;
 
-      // Boxed end credits image
-      const boxW = Math.min(w * 0.85, 800);
-      const boxH = Math.min(h * 0.6, 450);
-
-      // Shadow/Frame for the box
-      this.endCreditsBox = this.add.rectangle(w / 2, h * 0.42, boxW + 10, boxH + 10, 0xffffff, 1);
-      this.endCreditsBox.setDepth(101);
-      this.endCreditsBox.setAlpha(0);
-
-      this.endCreditsImg = this.add.image(w / 2, h * 0.42, "end_credits");
-      this.endCreditsImg.setDisplaySize(boxW, boxH);
-      this.endCreditsImg.setDepth(102);
+      // Full screen end credits image
+      this.endCreditsImg = this.add.image(w / 2, h / 2, "end_credits");
+      this.endCreditsImg.setDisplaySize(w, h);
+      this.endCreditsImg.setDepth(100);
       this.endCreditsImg.setAlpha(0);
 
-      // Title text
-      const titleStr = won ? "YOU WON!" : "GAME OVER";
-      this.endTitleText = this.add.text(w / 2, h * 0.15, titleStr, {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: Math.max(22, Math.round(w * 0.03)) + "px",
-        fontStyle: "bold",
-        color: "#ffffff",
-        align: "center",
-        stroke: '#000000',
-        strokeThickness: 6
-      });
-      this.endTitleText.setOrigin(0.5);
-      this.endTitleText.setDepth(103);
-      this.endTitleText.setAlpha(0);
+      // Buttons container or positioning
+      const btnFontSize = Math.max(16, Math.round(w * 0.02));
+      const padX = btnFontSize * 2;
+      const padY = btnFontSize * 1.2;
 
       // "Play Again" button
-      const btnFontSize = Math.max(14, Math.round(w * 0.02));
-      this.endBtnText = this.add.text(w / 2, h * 0.8, "Play Again", {
+      const btnSpacing = Math.min(w * 0.15, 150);
+      this.endBtnText = this.add.text(w / 2 - btnSpacing, h * 0.8, "PLAY AGAIN", {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: btnFontSize + "px",
         fontStyle: "bold",
@@ -346,10 +328,8 @@
       this.endBtnText.setDepth(104);
       this.endBtnText.setAlpha(0);
 
-      const padX = btnFontSize * 2;
-      const padY = btnFontSize * 1;
       this.endBtnBg = this.add.rectangle(
-        w / 2, h * 0.8,
+        this.endBtnText.x, this.endBtnText.y,
         this.endBtnText.width + padX,
         this.endBtnText.height + padY,
         0xc6422c
@@ -362,9 +342,41 @@
       this.endBtnBg.on("pointerout", () => this.endBtnBg.setFillStyle(0xc6422c));
       this.endBtnBg.on("pointerdown", () => this.startGame());
 
+      // "Skip" button
+      this.skipBtnText = this.add.text(w / 2 + btnSpacing, h * 0.8, "SKIP", {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: btnFontSize + "px",
+        fontStyle: "bold",
+        color: "#ffffff",
+        align: "center",
+        stroke: '#000000',
+        strokeThickness: 4
+      });
+      this.skipBtnText.setOrigin(0.5);
+      this.skipBtnText.setDepth(104);
+      this.skipBtnText.setAlpha(0);
+
+      this.skipBtnBg = this.add.rectangle(
+        this.skipBtnText.x, this.skipBtnText.y,
+        this.skipBtnText.width + padX,
+        this.skipBtnText.height + padY,
+        0x444444
+      );
+      this.skipBtnBg.setOrigin(0.5);
+      this.skipBtnBg.setDepth(103);
+      this.skipBtnBg.setAlpha(0);
+      this.skipBtnBg.setInteractive({ useHandCursor: true });
+      this.skipBtnBg.on("pointerover", () => this.skipBtnBg.setFillStyle(0x666666));
+      this.skipBtnBg.on("pointerout", () => this.skipBtnBg.setFillStyle(0x444444));
+      this.skipBtnBg.on("pointerdown", () => {
+        window.location.href = "https://www.emamiltd.in/brands/smart-and-handsome/";
+      });
+
       // Fade in everything together
+      const fadeTargets = [this.endCreditsImg, this.endBtnBg, this.endBtnText, this.skipBtnBg, this.skipBtnText];
+
       this.tweens.add({
-        targets: [this.endCreditsBox, this.endCreditsImg, this.endTitleText, this.endBtnBg, this.endBtnText],
+        targets: fadeTargets,
         alpha: 1,
         duration: 800
       });
@@ -373,9 +385,10 @@
     hideEndScreen() {
       if (this.endCreditsImg) { this.endCreditsImg.destroy(); this.endCreditsImg = null; }
       if (this.endCreditsBox) { this.endCreditsBox.destroy(); this.endCreditsBox = null; }
-      if (this.endTitleText) { this.endTitleText.destroy(); this.endTitleText = null; }
       if (this.endBtnBg) { this.endBtnBg.destroy(); this.endBtnBg = null; }
       if (this.endBtnText) { this.endBtnText.destroy(); this.endBtnText = null; }
+      if (this.skipBtnBg) { this.skipBtnBg.destroy(); this.skipBtnBg = null; }
+      if (this.skipBtnText) { this.skipBtnText.destroy(); this.skipBtnText = null; }
 
       // Hide lottie container if it's active
       if (lottieContainer) {
