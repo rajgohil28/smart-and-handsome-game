@@ -9,6 +9,7 @@
   const rotatePrompt = document.getElementById("rotate-prompt");
   const gameWrap = document.getElementById("game-wrap");
   const hudEl = document.querySelector(".hud");
+  const lottieContainer = document.getElementById("lottie-container");
 
   /* ---------- Orientation enforcement ---------- */
   function checkOrientation() {
@@ -31,7 +32,7 @@
 
   /* ---------- Constants ---------- */
   const BIKE_DISPLAY_W = 160;
-  const BIKE_DISPLAY_H = 110;
+  const BIKE_DISPLAY_H = 140;
   const WHEELIE_ANGLE = -45;
   const WHEELIE_DURATION = 1;
   const ingredientsPalette = ["#f8d15b", "#6fd3f2", "#f48fa6", "#7ce3b1"];
@@ -58,11 +59,16 @@
         console.error("Failed to load asset:", file.key, file.url);
       });
 
-      this.load.image("bike", "assets/Images/Biker_New.png");
+      this.load.spritesheet("bike", "assets/Images/Bike-Sheet.png", {
+        frameWidth: 297,
+        frameHeight: 258
+      });
       this.load.image("bg", "assets/Images/bg4.png");
       this.load.audio("motorcycle", "assets/sounds/motorcycle.mp3");
       this.load.audio("hit_sound", "assets/sounds/hit.mp3");
       this.load.audio("coin_sound", "assets/sounds/coin.mp3");
+      this.load.audio("victory_sound", "assets/sounds/Victory.mp3");
+      this.load.audio("failure_sound", "assets/sounds/Failure.mp3");
       this.load.spritesheet("explosion", "assets/animations/Dustexplosion.png", {
         frameWidth: 600,
         frameHeight: 525
@@ -87,6 +93,7 @@
       });
 
       this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
+      this.load.image("tube", "assets/Images/S&H_Tube.png");
     }
 
     create() {
@@ -97,6 +104,8 @@
       this.motorcycleSound = this.sound.add("motorcycle", { loop: true, volume: 0.2 });
       this.hitSound = this.sound.add("hit_sound", { volume: 0.5 });
       this.coinSound = this.sound.add("coin_sound", { volume: 0.5 });
+      this.victorySound = this.sound.add("victory_sound", { volume: 0.6 });
+      this.failureSound = this.sound.add("failure_sound", { volume: 0.6 });
 
       // Pause/resume sound when user switches tabs
       document.addEventListener("visibilitychange", () => {
@@ -144,6 +153,15 @@
         });
       }
 
+      if (!this.anims.exists("bike_anim")) {
+        this.anims.create({
+          key: "bike_anim",
+          frames: this.anims.generateFrameNumbers("bike", { start: 0, end: 2 }),
+          frameRate: 10,
+          repeat: -1
+        });
+      }
+
       this.bg = this.add.tileSprite(0, 0, w || 1280, h || 720, "bg");
       this.bg.setOrigin(0, 0);
       this.bg.setDepth(-1);
@@ -151,11 +169,12 @@
       this.bg.tileScaleX = bgScale;
       this.bg.tileScaleY = bgScale;
 
-      this.player = this.add.sprite((w || 1280) * 0.18, this.groundY, "bike");
+      this.player = this.add.sprite((w || 1280) * 0.18 + 30, this.groundY, "bike");
       this.player.setOrigin(0.15, 0.95);
       this.player.setDepth(10);
       this.player.displayWidth = BIKE_DISPLAY_W;
       this.player.displayHeight = BIKE_DISPLAY_H;
+      this.player.play("bike_anim");
 
       this.dust = this.add.sprite(0, 0, "bike_dust");
       this.dust.setOrigin(1, 0.95);
@@ -166,6 +185,12 @@
 
       this.ingredients = this.add.group();
       this.enemies = this.add.group();
+
+      this.tube = this.add.image(-100, h / 2 + 50, "tube");
+      this.tube.setOrigin(0, 0.5);
+      this.tube.setDepth(50); // Below end screen layer
+      const tubeTargetH = h * 0.7;
+      this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
 
       this.scale.on("resize", this.onResize, this);
 
@@ -188,24 +213,30 @@
         this.bg.tileScaleY = s;
       }
       if (this.player) {
-        this.player.x = w * 0.18;
+        this.player.x = w * 0.18 + 30;
         this.player.y = this.groundY;
+      }
+
+      if (this.tube) {
+        this.tube.setPosition(-100, h / 2 + 50);
+        const tubeTargetH = h * 0.7;
+        this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
       }
 
       // Reposition end screen elements on resize
       if (this.endCreditsImg) {
-        this.endCreditsImg.setPosition(w / 2, h / 2);
-        const imgW = this.textures.get("end_credits").getSourceImage().width;
-        const imgH = this.textures.get("end_credits").getSourceImage().height;
-        this.endCreditsImg.setScale(Math.max(w / imgW, h / imgH));
+        const boxW = Math.min(w * 0.85, 800);
+        const boxH = Math.min(h * 0.6, 450);
+        this.endCreditsImg.setPosition(w / 2, h * 0.42);
+        this.endCreditsImg.setDisplaySize(boxW, boxH);
+        if (this.endCreditsBox) {
+          this.endCreditsBox.setPosition(w / 2, h * 0.42);
+          this.endCreditsBox.setSize(boxW + 10, boxH + 10);
+        }
       }
-      if (this.endOverlay) {
-        this.endOverlay.setPosition(w / 2, h / 2);
-        this.endOverlay.setSize(w, h);
-      }
-      if (this.endTitleText) this.endTitleText.setPosition(w / 2, h * 0.38);
-      if (this.endBtnBg) this.endBtnBg.setPosition(w / 2, h * 0.52);
-      if (this.endBtnText) this.endBtnText.setPosition(w / 2, h * 0.52);
+      if (this.endTitleText) this.endTitleText.setPosition(w / 2, h * 0.15);
+      if (this.endBtnBg) this.endBtnBg.setPosition(w / 2, h * 0.8);
+      if (this.endBtnText) this.endBtnText.setPosition(w / 2, h * 0.8);
     }
 
     setupInput() {
@@ -230,10 +261,11 @@
       this.hideEndScreen();
 
       if (this.player) {
-        this.player.x = this.scale.width * 0.18;
+        this.player.x = this.scale.width * 0.18 + 30;
         this.player.y = this.groundY;
         this.player.angle = 0;
         this.player.setVisible(true);
+        this.player.play("bike_anim", true);
       }
       if (this.dust) {
         this.dust.setVisible(false);
@@ -257,6 +289,10 @@
 
       this.resetGameState();
       this.running = true;
+
+      if (this.victorySound) this.victorySound.stop();
+      if (this.failureSound) this.failureSound.stop();
+
       if (this.motorcycleSound) {
         this.motorcycleSound.play();
       }
@@ -266,80 +302,110 @@
       const w = this.scale.width;
       const h = this.scale.height;
 
-      // Full-canvas end credits image
-      this.endCreditsImg = this.add.image(w / 2, h / 2, "end_credits");
-      const imgW = this.endCreditsImg.width;
-      const imgH = this.endCreditsImg.height;
-      const scale = Math.max(w / imgW, h / imgH);
-      this.endCreditsImg.setScale(scale);
-      this.endCreditsImg.setDepth(100);
+      // Boxed end credits image
+      const boxW = Math.min(w * 0.85, 800);
+      const boxH = Math.min(h * 0.6, 450);
 
-      // Semi-transparent dark overlay for readability
-      this.endOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.5);
-      this.endOverlay.setDepth(101);
-      this.endOverlay.setAlpha(0);
+      // Shadow/Frame for the box
+      this.endCreditsBox = this.add.rectangle(w / 2, h * 0.42, boxW + 10, boxH + 10, 0xffffff, 1);
+      this.endCreditsBox.setDepth(101);
+      this.endCreditsBox.setAlpha(0);
+
+      this.endCreditsImg = this.add.image(w / 2, h * 0.42, "end_credits");
+      this.endCreditsImg.setDisplaySize(boxW, boxH);
+      this.endCreditsImg.setDepth(102);
+      this.endCreditsImg.setAlpha(0);
 
       // Title text
       const titleStr = won ? "YOU WON!" : "GAME OVER";
-      this.endTitleText = this.add.text(w / 2, h * 0.38, titleStr, {
-        fontFamily: '"Trebuchet MS", Arial, sans-serif',
-        fontSize: Math.max(28, Math.round(w * 0.04)) + "px",
+      this.endTitleText = this.add.text(w / 2, h * 0.15, titleStr, {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: Math.max(22, Math.round(w * 0.03)) + "px",
         fontStyle: "bold",
         color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 4,
         align: "center",
+        stroke: '#000000',
+        strokeThickness: 6
       });
       this.endTitleText.setOrigin(0.5);
-      this.endTitleText.setDepth(102);
+      this.endTitleText.setDepth(103);
       this.endTitleText.setAlpha(0);
 
       // "Play Again" button
-      const btnFontSize = Math.max(18, Math.round(w * 0.025));
-      const padX = btnFontSize * 2;
-      const padY = btnFontSize * 0.7;
-
-      this.endBtnText = this.add.text(w / 2, h * 0.52, "Play Again", {
-        fontFamily: '"Trebuchet MS", Arial, sans-serif',
+      const btnFontSize = Math.max(14, Math.round(w * 0.02));
+      this.endBtnText = this.add.text(w / 2, h * 0.8, "Play Again", {
+        fontFamily: '"Press Start 2P", monospace',
         fontSize: btnFontSize + "px",
         fontStyle: "bold",
         color: "#ffffff",
         align: "center",
+        stroke: '#000000',
+        strokeThickness: 4
       });
       this.endBtnText.setOrigin(0.5);
-      this.endBtnText.setDepth(103);
+      this.endBtnText.setDepth(104);
       this.endBtnText.setAlpha(0);
 
+      const padX = btnFontSize * 2;
+      const padY = btnFontSize * 1;
       this.endBtnBg = this.add.rectangle(
-        w / 2, h * 0.52,
+        w / 2, h * 0.8,
         this.endBtnText.width + padX,
         this.endBtnText.height + padY,
         0xc6422c
       );
       this.endBtnBg.setOrigin(0.5);
-      this.endBtnBg.setDepth(102);
+      this.endBtnBg.setDepth(103);
       this.endBtnBg.setAlpha(0);
       this.endBtnBg.setInteractive({ useHandCursor: true });
       this.endBtnBg.on("pointerover", () => this.endBtnBg.setFillStyle(0xa83520));
       this.endBtnBg.on("pointerout", () => this.endBtnBg.setFillStyle(0xc6422c));
       this.endBtnBg.on("pointerdown", () => this.startGame());
 
-      // Fade in the overlay, title, and button after a short delay
-      this.time.delayedCall(2500, () => {
-        if (!this.endOverlay) return; // guard against restart during delay
-        this.tweens.add({ targets: this.endOverlay, alpha: 1, duration: 600 });
-        this.tweens.add({ targets: this.endTitleText, alpha: 1, duration: 600 });
-        this.tweens.add({ targets: this.endBtnBg, alpha: 1, duration: 600 });
-        this.tweens.add({ targets: this.endBtnText, alpha: 1, duration: 600 });
+      // Fade in everything together
+      this.tweens.add({
+        targets: [this.endCreditsBox, this.endCreditsImg, this.endTitleText, this.endBtnBg, this.endBtnText],
+        alpha: 1,
+        duration: 800
       });
     }
 
     hideEndScreen() {
       if (this.endCreditsImg) { this.endCreditsImg.destroy(); this.endCreditsImg = null; }
-      if (this.endOverlay) { this.endOverlay.destroy(); this.endOverlay = null; }
+      if (this.endCreditsBox) { this.endCreditsBox.destroy(); this.endCreditsBox = null; }
       if (this.endTitleText) { this.endTitleText.destroy(); this.endTitleText = null; }
       if (this.endBtnBg) { this.endBtnBg.destroy(); this.endBtnBg = null; }
       if (this.endBtnText) { this.endBtnText.destroy(); this.endBtnText = null; }
+
+      // Hide lottie container if it's active
+      if (lottieContainer) {
+        lottieContainer.style.display = "none";
+        lottieContainer.innerHTML = "";
+      }
+    }
+
+    playWinCelebration(callback) {
+      if (!lottieContainer || typeof lottie === "undefined") {
+        callback();
+        return;
+      }
+
+      lottieContainer.style.display = "block";
+      const anim = lottie.loadAnimation({
+        container: lottieContainer,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        path: "assets/animations/Confetti - Full Screen.json"
+      });
+
+      // Show for 5 seconds then callback
+      this.time.delayedCall(5000, () => {
+        anim.destroy();
+        lottieContainer.style.display = "none";
+        lottieContainer.innerHTML = "";
+        callback();
+      });
     }
 
     updateHud(msg) {
@@ -412,11 +478,30 @@
       const y = this.groundY - sz / 2 + 5; // Sit on the ground (adjusted for center origin)
 
       if (type === "niancinamide") {
-        const sp = this.add.sprite(this.scale.width + 80, y, "niancinamide");
+        const container = this.add.container(this.scale.width + 80, y);
+        
+        const glow = this.add.image(0, 0, "methanol_glow");
+        glow.setDisplaySize(sz * 2.5, sz * 2.5);
+        glow.setAlpha(0.6);
+        glow.setTint(0x7ce3b1); // Greenish tint for niancinamide
+        
+        this.tweens.add({
+          targets: glow,
+          alpha: 0.2,
+          scale: (sz * 1.8) / 4524,
+          duration: 1200,
+          yoyo: true,
+          repeat: -1
+        });
+
+        const sp = this.add.sprite(0, 0, "niancinamide");
         sp.setDisplaySize(sz, sz);
         sp.play("niancinamide_anim");
-        sp.pickupType = "niancinamide";
-        this.ingredients.add(sp);
+        
+        container.add([glow, sp]);
+        container.pickupType = "niancinamide";
+        container.sz = sz;
+        this.ingredients.add(container);
       } else {
         // Methanol with pulsating glow
         const container = this.add.container(this.scale.width + 80, y + 30);
@@ -562,24 +647,37 @@
       this.enemies.getChildren().forEach(e => { if (e.x < -80) e.destroy(); });
 
       // End Game Conditions
-      if (this.lives <= 0 || this.score >= 60) {
+      if (this.lives <= 0 || this.score >= 40) {
         this.running = false;
         if (this.motorcycleSound) {
           this.motorcycleSound.stop();
         }
 
-        const won = this.score >= 60;
+        const won = this.score >= 40;
         this.updateHud(won ? "You Won!" : "Game Over");
         if (hudEl) hudEl.style.display = "none";
 
-        // Hide game objects and show end credits on the Phaser canvas
-        this.player.setVisible(false);
-        this.dust.setVisible(false);
-        this.bg.setVisible(false);
+        if (this.player) {
+          this.player.stop();
+        }
+
+        // Keep game objects visible but stop movement
         if (this.ingredients) this.ingredients.clear(true, true);
         if (this.enemies) this.enemies.clear(true, true);
+        if (this.dust) {
+          this.dust.setVisible(false);
+          this.dust.stop();
+        }
 
-        this.showEndScreen(won);
+        if (won) {
+          if (this.victorySound) this.victorySound.play();
+          this.playWinCelebration(() => {
+            this.showEndScreen(true);
+          });
+        } else {
+          if (this.failureSound) this.failureSound.play();
+          this.showEndScreen(false);
+        }
       }
     }
   }

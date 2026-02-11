@@ -7,11 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=1.0.1" />
+    <link rel="stylesheet" href="styles.css?v=1.0.3" />
     <!-- Phaser 3 for HTML5 2D creative (local, no CDN) -->
     <script src="assets/phaser.min.js"></script>
+    <!-- Lottie for celebrations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   </head>
   <body>
+    <div id="lottie-container" style="position: fixed; inset: 0; pointer-events: none; z-index: 9999; display: none;"></div>
     <!-- Landscape-only prompt shown in portrait -->
     <div class="rotate-prompt" id="rotate-prompt">
       <div class="rotate-inner">
@@ -69,6 +72,6 @@
         </div>
       </div>
     </main>
-    <script src="src/game.js?v=1.0.1"></script>
+    <script src="src/game.js?v=1.1.0"></script>
   </body>
 </html>

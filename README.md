@@ -7,7 +7,7 @@ HTML5 Phaser 3 game designed for AdMob creatives. No build step, no CDN — all 
 - Collect skincare ingredients (Niacinamide & Methanol) to earn points.
 - Virus enemies hurt the player when grounded (costs a life).
 - While in a wheelie, hitting enemies destroys them for bonus points (+3).
-- Reach a score of 60 to win, or lose all 3 lives for game over.
+- Reach a score of 40 to win, or lose all 3 lives for game over.
 
 ## Run
 Open `index.html` in a browser (no server required).
