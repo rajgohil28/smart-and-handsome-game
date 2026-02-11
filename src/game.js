@@ -280,10 +280,13 @@
       if (overlay) overlay.style.display = "none";
       if (hudEl) hudEl.style.display = "flex";
 
-      // Request fullscreen (must be called from a user gesture)
-      const el = document.documentElement;
-      if (!document.fullscreenElement) {
-        const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      // Request fullscreen using Phaser's scale manager (more robust for mobile)
+      if (this.scale.fullscreenSupported) {
+        this.scale.startFullscreen();
+      } else {
+        // Fallback for browsers with restricted Fullscreen API (like some iOS versions)
+        const el = document.documentElement;
+        const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
         if (rfs) rfs.call(el).catch(() => {});
       }
 
@@ -703,6 +706,8 @@
       parent: "game-container",
       width: "100%",
       height: "100%",
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      fullscreenTarget: "game-wrap"
     },
     scene: [MainScene],
     fps: { target: 60 },
