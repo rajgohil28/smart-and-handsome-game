@@ -68,7 +68,6 @@
       this.load.audio("hit_sound", "assets/sounds/hit.mp3");
       this.load.audio("coin_sound", "assets/sounds/coin.mp3");
       this.load.audio("victory_sound", "assets/sounds/Victory.mp3");
-      this.load.audio("failure_sound", "assets/sounds/Failure.mp3");
       this.load.spritesheet("explosion", "assets/animations/Dustexplosion.png", {
         frameWidth: 600,
         frameHeight: 525
@@ -105,7 +104,6 @@
       this.hitSound = this.sound.add("hit_sound", { volume: 0.5 });
       this.coinSound = this.sound.add("coin_sound", { volume: 0.5 });
       this.victorySound = this.sound.add("victory_sound", { volume: 0.6 });
-      this.failureSound = this.sound.add("failure_sound", { volume: 0.6 });
 
       // Pause/resume sound when user switches tabs
       document.addEventListener("visibilitychange", () => {
@@ -186,10 +184,10 @@
       this.ingredients = this.add.group();
       this.enemies = this.add.group();
 
-      this.tube = this.add.image(-70, h / 2 + 50, "tube");
+      this.tube = this.add.image(40, h / 2 + 50, "tube");
       this.tube.setOrigin(0, 0.5);
       this.tube.setDepth(50); // Below end screen layer
-      const tubeTargetH = h * 0.7;
+      const tubeTargetH = h * 0.49;
       this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
 
       this.scale.on("resize", this.onResize, this);
@@ -218,8 +216,8 @@
       }
 
       if (this.tube) {
-        this.tube.setPosition(-70, h / 2 + 50);
-        const tubeTargetH = h * 0.7;
+        this.tube.setPosition(40, h / 2 + 50);
+        const tubeTargetH = h * 0.49;
         this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
       }
 
@@ -294,7 +292,6 @@
       this.running = true;
 
       if (this.victorySound) this.victorySound.stop();
-      if (this.failureSound) this.failureSound.stop();
 
       if (this.motorcycleSound) {
         this.motorcycleSound.play();
@@ -691,7 +688,6 @@
             this.showEndScreen(true);
           });
         } else {
-          if (this.failureSound) this.failureSound.play();
           this.showEndScreen(false);
         }
       }
