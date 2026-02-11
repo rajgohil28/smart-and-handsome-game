@@ -58,9 +58,11 @@
         console.error("Failed to load asset:", file.key, file.url);
       });
 
-      this.load.image("bike", "assets/Images/Bike-Sprite.png");
-      this.load.image("bg", "assets/Images/bg3.png");
+      this.load.image("bike", "assets/Images/Biker_New.png");
+      this.load.image("bg", "assets/Images/bg4.png");
       this.load.audio("motorcycle", "assets/sounds/motorcycle.mp3");
+      this.load.audio("hit_sound", "assets/sounds/hit.mp3");
+      this.load.audio("coin_sound", "assets/sounds/coin.mp3");
       this.load.spritesheet("explosion", "assets/animations/Dustexplosion.png", {
         frameWidth: 600,
         frameHeight: 525
@@ -93,6 +95,8 @@
       this.groundY = Math.round(h * 0.845) + 7;
 
       this.motorcycleSound = this.sound.add("motorcycle", { loop: true, volume: 0.2 });
+      this.hitSound = this.sound.add("hit_sound", { volume: 0.5 });
+      this.coinSound = this.sound.add("coin_sound", { volume: 0.5 });
 
       // Pause/resume sound when user switches tabs
       document.addEventListener("visibilitychange", () => {
@@ -242,7 +246,15 @@
 
     startGame() {
       if (overlay) overlay.style.display = "none";
-      if (hudEl) hudEl.style.display = "grid";
+      if (hudEl) hudEl.style.display = "flex";
+
+      // Request fullscreen (must be called from a user gesture)
+      const el = document.documentElement;
+      if (!document.fullscreenElement) {
+        const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (rfs) rfs.call(el).catch(() => {});
+      }
+
       this.resetGameState();
       this.running = true;
       if (this.motorcycleSound) {
@@ -331,9 +343,26 @@
     }
 
     updateHud(msg) {
-      if (scoreEl) scoreEl.textContent = "Score: " + this.score;
-      if (livesEl) livesEl.textContent = "Lives: " + this.lives;
-      if (msg && stateEl) stateEl.textContent = msg;
+      if (scoreEl) {
+        const oldScore = parseInt(scoreEl.textContent);
+        scoreEl.textContent = this.score;
+        if (oldScore !== this.score) this.triggerPulse(scoreEl.parentElement);
+      }
+      if (livesEl) {
+        const oldLives = parseInt(livesEl.textContent);
+        livesEl.textContent = this.lives;
+        if (oldLives !== this.lives) this.triggerPulse(livesEl.parentElement);
+      }
+      if (msg && stateEl) {
+        stateEl.textContent = msg.toUpperCase();
+      }
+    }
+
+    triggerPulse(element) {
+      if (!element) return;
+      element.classList.remove("hud-pulse");
+      void element.offsetWidth; // Trigger reflow
+      element.classList.add("hud-pulse");
     }
 
     /** Show a floating text that rises and fades out above the player */
@@ -343,7 +372,7 @@
 
       const txt = this.add.text(x, y, label, {
         fontFamily: '"Press Start 2P", monospace',
-        fontSize: Math.max(12, Math.round(this.scale.width * 0.014)) + "px",
+        fontSize: Math.max(16, Math.round(this.scale.width * 0.014) + 4) + "px",
         color: "#38bdf8",
         stroke: "#0c1a2e",
         strokeThickness: 3,
@@ -359,6 +388,21 @@
         duration: 900,
         ease: "Cubic.easeOut",
         onComplete: () => txt.destroy(),
+      });
+    }
+
+    /** Make the player blink when hit */
+    blinkPlayer() {
+      if (!this.player) return;
+      this.tweens.add({
+        targets: this.player,
+        alpha: 0.2,
+        duration: 100,
+        yoyo: true,
+        repeat: 5,
+        onComplete: () => {
+          if (this.player) this.player.setAlpha(1);
+        }
       });
     }
 
@@ -486,6 +530,7 @@
           this.score += 1;
           this.updateHud("Nice pick-up!");
           this.showFloatingText("+1 " + displayName);
+          if (this.coinSound) this.coinSound.play();
         }
       });
 
@@ -507,6 +552,8 @@
           } else {
             this.lives -= 1;
             this.updateHud("Hit! Lost a life.");
+            this.blinkPlayer();
+            if (this.hitSound) this.hitSound.play();
           }
         }
       });

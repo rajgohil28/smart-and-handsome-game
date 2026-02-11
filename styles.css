@@ -47,24 +47,80 @@ body {
 /* ---------- HUD ---------- */
 .hud {
   position: absolute;
-  top: 8px;
-  left: 12px;
-  right: 12px;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 30px;
   display: none; /* Hidden by default, shown by JS when game starts */
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: var(--hud-bg);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  font-size: clamp(11px, 1.8vw, 16px);
+  justify-content: space-between;
+  align-items: flex-start;
   pointer-events: none;
-  z-index: 20;
+  z-index: 1000;
+  font-family: "Press Start 2P", monospace;
 }
 
-.hud-row {
+.hud-item {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 2px solid #7ce3b1;
+  border-radius: 12px;
+  padding: 10px 15px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  min-width: 100px;
+}
+
+.hud-lives {
+  border-color: #ff4b2b;
+}
+
+.hud-label {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+.hud-value {
+  font-size: 18px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.hud-score .hud-value {
+  color: #7ce3b1;
+}
+
+.hud-lives .hud-value {
+  color: #ff4b2b;
+}
+
+.hud-center {
+  margin-top: 10px;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#state {
+  font-size: 12px;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+}
+
+/* Animations for score/lives change */
+.hud-pulse {
+  animation: hud-pulse 0.4s ease-out;
+}
+
+@keyframes hud-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 
@@ -128,6 +184,61 @@ body {
   text-align: center;
   margin: 0;
   line-height: 1.3;
+}
+
+/* --- Instructions --- */
+.overlay-instructions {
+  display: flex;
+  gap: clamp(10px, 2vw, 30px);
+  margin: clamp(5px, 1vh, 15px) 0;
+}
+
+.instruction-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: clamp(80px, 12vw, 140px);
+}
+
+.instruction-icon {
+  width: clamp(32px, 5vw, 48px);
+  height: clamp(32px, 5vw, 48px);
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid #fff;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.instruction-icon.wheelie::after {
+  content: '⤴';
+  font-size: 24px;
+  color: #fff;
+}
+
+.instruction-icon.collect::after {
+  content: '✦';
+  font-size: 24px;
+  color: #f8d15b;
+}
+
+.instruction-icon.avoid::after {
+  content: '✖';
+  font-size: 24px;
+  color: #ff4b2b;
+}
+
+.instruction-item p {
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(6px, 1vw, 10px);
+  color: #fff;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* --- Start button --- */
