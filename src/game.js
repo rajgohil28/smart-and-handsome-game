@@ -93,6 +93,7 @@
 
       this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
+      this.load.image("bike_glow", "assets/Images/Glow_Bike.png");
     }
 
     create() {
@@ -174,6 +175,13 @@
       this.player.displayHeight = BIKE_DISPLAY_H;
       this.player.play("bike_anim");
 
+      this.bikeGlow = this.add.image(this.player.x, this.player.y, "bike_glow");
+      this.bikeGlow.setOrigin(0.5, 0.5); 
+      this.bikeGlow.setDepth(11); 
+      this.bikeGlow.setDisplaySize(BIKE_DISPLAY_W * 2.7, BIKE_DISPLAY_H * 2.7);
+      this.bikeGlow.setAlpha(0);
+      this.bikeGlow.setVisible(false);
+
       this.dust = this.add.sprite(0, 0, "bike_dust");
       this.dust.setOrigin(1, 0.95);
       this.dust.setDepth(5); // Behind bike
@@ -213,6 +221,12 @@
       if (this.player) {
         this.player.x = w * 0.18 + 60;
         this.player.y = this.groundY;
+      }
+
+      if (this.bikeGlow) {
+        const center = this.player.getCenter();
+        this.bikeGlow.setPosition(center.x, center.y);
+        this.bikeGlow.angle = this.player.angle;
       }
 
       if (this.tube) {
@@ -264,6 +278,13 @@
         this.player.angle = 0;
         this.player.setVisible(true);
         this.player.play("bike_anim", true);
+      }
+      if (this.bikeGlow) {
+        const center = this.player.getCenter();
+        this.bikeGlow.x = center.x;
+        this.bikeGlow.y = center.y;
+        this.bikeGlow.setVisible(false);
+        this.bikeGlow.setAlpha(0);
       }
       if (this.dust) {
         this.dust.setVisible(false);
@@ -485,6 +506,26 @@
       });
     }
 
+    triggerPickGlow() {
+      if (!this.bikeGlow) return;
+      this.bikeGlow.setVisible(true);
+      this.bikeGlow.setAlpha(0);
+      
+      this.tweens.add({
+        targets: this.bikeGlow,
+        alpha: 1,
+        duration: 200,
+        yoyo: true,
+        repeat: 1,
+        onComplete: () => {
+          if (this.bikeGlow) {
+            this.bikeGlow.setVisible(false);
+            this.bikeGlow.setAlpha(0);
+          }
+        }
+      });
+    }
+
     spawnIngredient() {
       const type = Math.random() < 0.5 ? "niancinamide" : "methanol";
       const sz = (60 + Math.random() * 20) * 1.3; // Increased by 30%
@@ -569,6 +610,12 @@
         8 * dt
       );
 
+      if (this.bikeGlow) {
+        const center = this.player.getCenter();
+        this.bikeGlow.setPosition(center.x, center.y);
+        this.bikeGlow.angle = this.player.angle;
+      }
+
       // Dust logic
       if (wh && this.running) {
         this.dust.setVisible(true);
@@ -628,6 +675,7 @@
           this.score += 1;
           this.updateHud("Nice pick-up!");
           this.showFloatingText("+1 " + displayName);
+          this.triggerPickGlow();
           if (this.coinSound) this.coinSound.play();
         }
       });
@@ -672,6 +720,9 @@
 
         if (this.player) {
           this.player.stop();
+        }
+        if (this.bikeGlow) {
+          this.bikeGlow.setVisible(false);
         }
 
         // Keep game objects visible but stop movement
