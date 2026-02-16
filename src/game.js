@@ -194,11 +194,45 @@
       this.lasers = this.add.group();
       this.explosions = this.add.group();
 
+      this.preWarmPools();
+
       this.scale.on("resize", this.onResize, this);
 
       this.resetGameState();
       this.setupInput();
       this.running = false;
+    }
+
+    preWarmPools() {
+      // Pre-create 6 ingredients
+      for (let i = 0; i < 6; i++) {
+        this.spawnIngredient();
+      }
+      this.ingredients.getChildren().forEach(item => item.setActive(false).setVisible(false));
+
+      // Pre-create 6 enemies
+      for (let i = 0; i < 6; i++) {
+        this.spawnEnemy();
+      }
+      this.enemies.getChildren().forEach(enemy => enemy.setActive(false).setVisible(false));
+
+      // Pre-create 12 lasers
+      for (let i = 0; i < 12; i++) {
+        const laser = this.add.rectangle(0, 0, 56, 7, 0x00f2ff);
+        const glow = this.add.rectangle(0, 0, 70, 14, 0x00f2ff, 0.3);
+        const lObj = this.add.container(-100, -100);
+        lObj.add([glow, laser]);
+        lObj.setDepth(1000);
+        lObj.setActive(false).setVisible(false);
+        this.lasers.add(lObj);
+      }
+
+      // Pre-create 6 explosions
+      for (let i = 0; i < 6; i++) {
+        const exp = this.add.sprite(-100, -100, "explosion");
+        exp.setActive(false).setVisible(false);
+        this.explosions.add(exp);
+      }
     }
 
     onResize(gameSize) {
