@@ -49,7 +49,7 @@
       this.score = 0;
       this.lives = 3;
       this.nextSpawnTimer = 0;
-      this.worldSpeed = 320;
+      this.worldSpeed = 650;
       this.running = false;
       this.groundY = 0;
     }
@@ -598,8 +598,8 @@
         } else {
           this.spawnIngredient();
         }
-        // Random distance: at least 1.1s (about 350px) to 2.0s between spawns
-        this.nextSpawnTimer = 1.1 + Math.random() * 0.9;
+        // Random distance: at least 0.9s to 1.5s between spawns for high speed spacing
+        this.nextSpawnTimer = 0.9 + Math.random() * 0.6;
       }
 
       const mv = this.worldSpeed * dt;
