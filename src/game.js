@@ -10,6 +10,7 @@
   const gameWrap = document.getElementById("game-wrap");
   const hudEl = document.querySelector(".hud");
   const lottieContainer = document.getElementById("lottie-container");
+  const energyBarFill = document.getElementById("energy-bar");
 
   /* ---------- Orientation enforcement ---------- */
   function checkOrientation() {
@@ -33,8 +34,11 @@
   /* ---------- Constants ---------- */
   const BIKE_DISPLAY_W = 160;
   const BIKE_DISPLAY_H = 140;
-  const WHEELIE_ANGLE = -45;
-  const WHEELIE_DURATION = 1;
+  const LASER_SPEED = 1000;
+  const SHOOT_COOLDOWN = 250; // ms
+  const SHOOT_ENERGY_COST = 34;
+  const ENERGY_RECHARGE_RATE = 20; // per second
+  const MAX_ENERGY = 100;
   const ingredientsPalette = ["#f8d15b", "#6fd3f2", "#f48fa6", "#7ce3b1"];
 
   /* ---------- Scene ---------- */
@@ -45,9 +49,11 @@
       this.bg = null;
       this.ingredients = null;
       this.enemies = null;
-      this.wheelieTime = 0;
+      this.lasers = null;
+      this.lastShootTime = 0;
       this.score = 0;
       this.lives = 3;
+      this.energy = MAX_ENERGY;
       this.nextSpawnTimer = 0;
       this.worldSpeed = 650;
       this.running = false;
@@ -59,15 +65,21 @@
         console.error("Failed to load asset:", file.key, file.url);
       });
 
-      this.load.spritesheet("bike", "assets/Images/Bike-Sheet.png", {
-        frameWidth: 297,
-        frameHeight: 258
+      this.load.spritesheet("bike", "assets/Images/Modern-bike-game/Bike_Idle.png", {
+        frameWidth: 368,
+        frameHeight: 260
       });
-      this.load.image("bg", "assets/Images/bg4.png");
-      this.load.audio("motorcycle", "assets/sounds/motorcycle.mp3");
+      this.load.spritesheet("bike_pulsating", "assets/Images/Modern-bike-game/BIke_Pulsating.png", {
+        frameWidth: 366,
+        frameHeight: 260
+      });
+      this.load.image("bg", "assets/Images/Modern-bike-game/Bg_new.png");
+      this.load.audio("motorcycle", "assets/sounds/bike-sound-edited.mp3");
       this.load.audio("hit_sound", "assets/sounds/hit.mp3");
       this.load.audio("coin_sound", "assets/sounds/coin.mp3");
       this.load.audio("victory_sound", "assets/sounds/Victory.mp3");
+      this.load.audio("laser_sound", "assets/sounds/laser.mp3");
+      this.load.audio("destroy_sound", "assets/sounds/Destroy.mp3");
       this.load.spritesheet("explosion", "assets/animations/Dustexplosion.png", {
         frameWidth: 600,
         frameHeight: 525
@@ -78,33 +90,28 @@
       });
       
       // New Pickups
-      this.load.spritesheet("niancinamide", "assets/Images/niancinamide.png", {
-        frameWidth: 500,
-        frameHeight: 500
-      });
-      this.load.image("methanol_1", "assets/Images/Methanol_1.png");
-      this.load.image("methanol_2", "assets/Images/Methanol_2.png");
-      this.load.image("methanol_3", "assets/Images/Methanol_3.png");
+      this.load.image("niancinamide", "assets/Images/Modern-bike-game/Niancinamide_new.png");
+      this.load.image("b12", "assets/Images/Modern-bike-game/B12_new.png");
       this.load.image("methanol_glow", "assets/Images/Methanol _glow_gradient.png");
-      this.load.spritesheet("virus", "assets/Images/virus.png", {
-        frameWidth: 480,
-        frameHeight: 480
-      });
+      this.load.image("virus", "assets/Images/Modern-bike-game/Enemy_Virus.png");
+      this.load.image("virus_glow", "assets/Images/Modern-bike-game/Enemy_Glow.png");
 
       this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
+      this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
-      this.load.image("bike_glow", "assets/Images/Glow_Bike.png");
     }
 
     create() {
       const w = this.scale.width;
       const h = this.scale.height;
-      this.groundY = Math.round(h * 0.845) + 7;
+      this.groundY = Math.round(h * 0.845) + 7 - 30;
 
       this.motorcycleSound = this.sound.add("motorcycle", { loop: true, volume: 0.2 });
       this.hitSound = this.sound.add("hit_sound", { volume: 0.5 });
       this.coinSound = this.sound.add("coin_sound", { volume: 0.5 });
       this.victorySound = this.sound.add("victory_sound", { volume: 0.6 });
+      this.laserSound = this.sound.add("laser_sound", { volume: 0.4 });
+      this.destroySound = this.sound.add("destroy_sound", { volume: 0.6 });
 
       // Pause/resume sound when user switches tabs
       document.addEventListener("visibilitychange", () => {
@@ -134,51 +141,43 @@
         });
       }
 
-      if (!this.anims.exists("niancinamide_anim")) {
+      if (!this.anims.exists("bike_anim")) {
         this.anims.create({
-          key: "niancinamide_anim",
-          frames: this.anims.generateFrameNumbers("niancinamide", { start: 0, end: 199 }),
-          frameRate: 30,
-          repeat: -1
-        });
-      }
-
-      if (!this.anims.exists("virus_anim")) {
-        this.anims.create({
-          key: "virus_anim",
-          frames: this.anims.generateFrameNumbers("virus", { start: 0, end: 40 }),
+          key: "bike_anim",
+          frames: this.anims.generateFrameNumbers("bike", { start: 0, end: 4 }),
           frameRate: 15,
           repeat: -1
         });
       }
 
-      if (!this.anims.exists("bike_anim")) {
+      if (!this.anims.exists("bike_pickup_anim")) {
         this.anims.create({
-          key: "bike_anim",
-          frames: this.anims.generateFrameNumbers("bike", { start: 0, end: 2 }),
-          frameRate: 10,
-          repeat: -1
+          key: "bike_pickup_anim",
+          frames: this.anims.generateFrameNumbers("bike_pulsating", { start: 0, end: 4 }),
+          frameRate: 20,
+          repeat: 0
         });
       }
 
       this.bg = this.add.tileSprite(0, 0, w || 1280, h || 720, "bg");
       this.bg.setOrigin(0, 0);
       this.bg.setDepth(-1);
-      const bgScale = Math.max((w || 1280) / 6000, (h || 720) / 805);
+      const bgScale = Math.max((w || 1280) / 6000, (h || 720) / 805) * 2;
       this.bg.tileScaleX = bgScale;
       this.bg.tileScaleY = bgScale;
 
-      this.player = this.add.sprite((w || 1280) * 0.18 + 60, this.groundY, "bike");
+      this.player = this.add.sprite((w || 1280) * 0.18 - 50, this.groundY, "bike");
       this.player.setOrigin(0.15, 0.95);
       this.player.setDepth(10);
       this.player.displayWidth = BIKE_DISPLAY_W;
       this.player.displayHeight = BIKE_DISPLAY_H;
       this.player.play("bike_anim");
 
-      this.bikeGlow = this.add.image(this.player.x, this.player.y, "bike_glow");
-      this.bikeGlow.setOrigin(0.5, 0.5); 
+      this.bikeGlow = this.add.sprite(this.player.x, this.player.y, "bike_pulsating");
+      this.bikeGlow.setOrigin(0.15, 0.95); // Match player origin
       this.bikeGlow.setDepth(11); 
-      this.bikeGlow.setDisplaySize(BIKE_DISPLAY_W * 2.7, BIKE_DISPLAY_H * 2.7);
+      this.bikeGlow.displayWidth = BIKE_DISPLAY_W;
+      this.bikeGlow.displayHeight = BIKE_DISPLAY_H;
       this.bikeGlow.setAlpha(0);
       this.bikeGlow.setVisible(false);
 
@@ -189,14 +188,11 @@
       this.dust.play("dust_anim");
       this.dust.setScale(0.4);
 
+      // --- OBJECT POOLING ---
       this.ingredients = this.add.group();
       this.enemies = this.add.group();
-
-      this.tube = this.add.image(40, h / 2 + 50, "tube");
-      this.tube.setOrigin(0, 0.5);
-      this.tube.setDepth(50); // Below end screen layer
-      const tubeTargetH = h * 0.49;
-      this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
+      this.lasers = this.add.group();
+      this.explosions = this.add.group();
 
       this.scale.on("resize", this.onResize, this);
 
@@ -210,29 +206,22 @@
       const h = gameSize.height;
       if (w <= 0 || h <= 0) return;
 
-      this.groundY = Math.round(h * 0.845) + 12;
+      this.groundY = Math.round(h * 0.845) + 12 - 30;
 
       if (this.bg) {
         this.bg.setSize(w, h);
-        const s = Math.max(w / 6000, h / 805);
+        const s = Math.max(w / 6000, h / 805) * 2;
         this.bg.tileScaleX = s;
         this.bg.tileScaleY = s;
       }
       if (this.player) {
-        this.player.x = w * 0.18 + 60;
+        this.player.x = w * 0.18 - 50;
         this.player.y = this.groundY;
       }
 
       if (this.bikeGlow) {
-        const center = this.player.getCenter();
-        this.bikeGlow.setPosition(center.x, center.y);
+        this.bikeGlow.setPosition(this.player.x, this.player.y);
         this.bikeGlow.angle = this.player.angle;
-      }
-
-      if (this.tube) {
-        this.tube.setPosition(40, h / 2 + 50);
-        const tubeTargetH = h * 0.49;
-        this.tube.setDisplaySize(tubeTargetH * (this.tube.width / this.tube.height), tubeTargetH);
       }
 
       // Reposition end screen elements on resize
@@ -249,35 +238,73 @@
     setupInput() {
       this.input.on("pointerdown", () => {
         if (!this.running) return;
-        if (this.wheelieTime <= 0) {
-          this.wheelieTime = WHEELIE_DURATION;
-        }
+        this.shoot();
       });
       if (startBtn) startBtn.addEventListener("click", () => this.startGame());
+    }
+
+    shoot() {
+      const now = this.time.now;
+      if (now - this.lastShootTime < SHOOT_COOLDOWN) return;
+      if (this.energy < SHOOT_ENERGY_COST) {
+        this.updateHud("Out of energy!");
+        return;
+      }
+      
+      this.lastShootTime = now;
+      this.energy -= SHOOT_ENERGY_COST;
+      this.updateEnergyBar();
+      if (this.laserSound) this.laserSound.play();
+
+      const px = this.player.x + 60;
+      const py = this.player.y - 45;
+
+      // Create/Get two lasers
+      for (let i = 0; i < 2; i++) {
+        const offset = i === 0 ? -20 : 20;
+        
+        // Try to get from group
+        let lObj = this.lasers.getFirstDead(false);
+        if (!lObj) {
+          // If not in group, create it
+          const laser = this.add.rectangle(0, 0, 56, 7, 0x00f2ff);
+          const glow = this.add.rectangle(0, 0, 70, 14, 0x00f2ff, 0.3);
+          lObj = this.add.container(px, py + offset);
+          lObj.add([glow, laser]);
+          lObj.setDepth(1000);
+          this.lasers.add(lObj);
+        } else {
+          lObj.setPosition(px, py + offset);
+          lObj.setActive(true).setVisible(true);
+        }
+      }
     }
 
     resetGameState() {
       this.score = 0;
       this.lives = 3;
-      this.wheelieTime = 0;
-      this.nextSpawnTimer = 0;
+      this.energy = MAX_ENERGY;
+      this.updateEnergyBar();
+      this.lastShootTime = 0;
+      this.nextSpawnTimer = 5; // Start spawning after 5 seconds
       if (this.ingredients) this.ingredients.clear(true, true);
       if (this.enemies) this.enemies.clear(true, true);
+      if (this.lasers) this.lasers.clear(true, true);
+      if (this.explosions) this.explosions.clear(true, true);
 
       // Destroy Phaser end screen elements if they exist
       this.hideEndScreen();
 
       if (this.player) {
-        this.player.x = this.scale.width * 0.18 + 60;
+        this.player.x = this.scale.width * 0.18 - 50;
         this.player.y = this.groundY;
         this.player.angle = 0;
         this.player.setVisible(true);
         this.player.play("bike_anim", true);
       }
       if (this.bikeGlow) {
-        const center = this.player.getCenter();
-        this.bikeGlow.x = center.x;
-        this.bikeGlow.y = center.y;
+        this.bikeGlow.x = this.player.x;
+        this.bikeGlow.y = this.player.y;
         this.bikeGlow.setVisible(false);
         this.bikeGlow.setAlpha(0);
       }
@@ -287,7 +314,7 @@
       if (this.bg) {
         this.bg.setVisible(true);
       }
-      this.updateHud("Tap anywhere to wheelie");
+      this.updateHud("Tap anywhere to shoot");
     }
 
     startGame() {
@@ -388,6 +415,37 @@
         return;
       }
 
+      const w = this.scale.width;
+      const h = this.scale.height;
+
+      // Show end instructions during celebration
+      const endInstr = this.add.image(w / 2, h / 2, "end_instructions");
+      const instrScale = Math.min((w * 0.8) / endInstr.width, (h * 0.7) / endInstr.height);
+      endInstr.setScale(instrScale);
+      endInstr.setDepth(1000);
+      endInstr.setAlpha(0);
+
+      // Add tube image to the right of end instructions
+      const tube = this.add.image(
+        w / 2 + (endInstr.width * instrScale) / 2,
+        h / 2,
+        "tube"
+      );
+      // Scale tube relative to instructions (reduced by 30% from 0.8)
+      const tubeScale = instrScale * 0.56; 
+      tube.setScale(tubeScale);
+      tube.setAngle(16);
+      tube.setDepth(1001);
+      tube.setAlpha(0);
+      // Offset slightly to the right so it's "right most"
+      tube.x += (tube.width * tubeScale) * 0.3 - 20;
+
+      this.tweens.add({
+        targets: [endInstr, tube],
+        alpha: 1,
+        duration: 500
+      });
+
       lottieContainer.style.display = "block";
       const anim = lottie.loadAnimation({
         container: lottieContainer,
@@ -402,7 +460,18 @@
         anim.destroy();
         lottieContainer.style.display = "none";
         lottieContainer.innerHTML = "";
-        callback();
+        
+        // Fade out everything before credits
+        this.tweens.add({
+          targets: [endInstr, tube],
+          alpha: 0,
+          duration: 500,
+          onComplete: () => {
+            endInstr.destroy();
+            tube.destroy();
+            callback();
+          }
+        });
       });
     }
 
@@ -419,6 +488,20 @@
       }
       if (msg && stateEl) {
         stateEl.textContent = msg.toUpperCase();
+      }
+    }
+
+    updateEnergyBar() {
+      if (energyBarFill) {
+        const percent = (this.energy / MAX_ENERGY) * 100;
+        energyBarFill.style.width = percent + "%";
+        
+        // Change color when low
+        if (this.energy < SHOOT_ENERGY_COST) {
+          energyBarFill.style.background = "#ff4b2b";
+        } else {
+          energyBarFill.style.background = "linear-gradient(90deg, #00f2ff, #38bdf8)";
+        }
       }
     }
 
@@ -471,92 +554,113 @@
     }
 
     triggerPickGlow() {
-      if (!this.bikeGlow) return;
-      this.bikeGlow.setVisible(true);
-      this.bikeGlow.setAlpha(0);
+      if (!this.bikeGlow || !this.player) return;
       
-      this.tweens.add({
-        targets: this.bikeGlow,
-        alpha: 1,
-        duration: 200,
-        yoyo: true,
-        repeat: 1,
-        onComplete: () => {
-          if (this.bikeGlow) {
-            this.bikeGlow.setVisible(false);
-            this.bikeGlow.setAlpha(0);
-          }
+      // Hide regular player and show pulsating player
+      this.player.setVisible(false);
+      this.bikeGlow.setVisible(true);
+      this.bikeGlow.setAlpha(1);
+      this.bikeGlow.play("bike_pickup_anim");
+      
+      this.bikeGlow.once('animationcomplete', () => {
+        if (this.bikeGlow && this.player) {
+          this.bikeGlow.setVisible(false);
+          this.bikeGlow.setAlpha(0);
+          this.player.setVisible(true);
         }
       });
     }
 
     spawnIngredient() {
-      const type = Math.random() < 0.5 ? "niancinamide" : "methanol";
-      const sz = (60 + Math.random() * 20) * 1.3; // Increased by 30%
-      const y = this.groundY - sz / 2 + 5; // Sit on the ground (adjusted for center origin)
+      const type = Math.random() < 0.5 ? "niancinamide" : "b12";
+      const sz = (60 + Math.random() * 20) * 1.3 * 2; 
+      const y = this.groundY - sz / 2 + 5; 
+      const x = this.scale.width + 80;
 
-      if (type === "niancinamide") {
-        const container = this.add.container(this.scale.width + 80, y);
-        
+      let item = this.ingredients.getFirstDead(false);
+      if (!item) {
         const glow = this.add.image(0, 0, "methanol_glow");
         glow.setDisplaySize(sz * 2.5, sz * 2.5);
         glow.setAlpha(0.6);
-        glow.setTint(0x7ce3b1); // Greenish tint for niancinamide
+        glow.name = "glow";
         
         this.tweens.add({
           targets: glow,
           alpha: 0.2,
-          scale: (sz * 1.8) / 4524,
+          scale: (sz * 1.8) / 512,
           duration: 1200,
           yoyo: true,
           repeat: -1
         });
 
-        const sp = this.add.sprite(0, 0, "niancinamide");
+        const sp = this.add.image(0, 0, type);
         sp.setDisplaySize(sz, sz);
-        sp.play("niancinamide_anim");
+        sp.name = "sprite";
         
-        container.add([glow, sp]);
-        container.pickupType = "niancinamide";
-        container.sz = sz;
-        this.ingredients.add(container);
+        item = this.add.container(x, y);
+        item.add([glow, sp]);
+        this.ingredients.add(item);
       } else {
-        // Methanol with pulsating glow
-        const container = this.add.container(this.scale.width + 80, y + 30);
-        
-        const glow = this.add.image(0, 0, "methanol_glow");
-        glow.setDisplaySize(sz * 3, sz * 3);
-        glow.setAlpha(0.7);
-        
-        // Pulsate glow
-        this.tweens.add({
-          targets: glow,
-          alpha: 0.3,
-          scale: (sz * 2) / 4524, // Using pixelWidth found earlier
-          duration: 1000,
-          yoyo: true,
-          repeat: -1
-        });
+        item.setPosition(x, y);
+        item.setActive(true).setVisible(true);
+        const glow = item.getByName("glow");
+        const sprite = item.getByName("sprite");
+        sprite.setTexture(type);
+        sprite.setDisplaySize(sz, sz);
+        glow.setDisplaySize(sz * 2.5, sz * 2.5);
+      }
 
-        const mImg = "methanol_" + (Math.floor(Math.random() * 3) + 1);
-        const sp = this.add.image(0, 0, mImg);
-        sp.setDisplaySize(sz, sz);
-        
-        container.add([glow, sp]);
-        container.pickupType = "methanol";
-        container.sz = sz;
-        this.ingredients.add(container);
+      item.pickupType = type;
+      item.sz = sz;
+      item.collected = false;
+
+      const glow = item.getByName("glow");
+      if (type === "niancinamide") {
+        glow.setTint(0x7ce3b1);
+      } else {
+        glow.setTint(0x38bdf8);
       }
     }
 
     spawnEnemy() {
       const sz = 60 + Math.random() * 20;
-      const sp = this.add.sprite(this.scale.width + 120, this.groundY, "virus");
-      sp.setOrigin(0.5, 1);
-      sp.setDisplaySize(sz, sz);
-      sp.play("virus_anim");
-      sp.dead = false;
-      this.enemies.add(sp);
+      const x = this.scale.width + 120;
+      const y = this.groundY - sz / 2;
+
+      let enemy = this.enemies.getFirstDead(false);
+      if (!enemy) {
+        const glow = this.add.image(0, 0, "virus_glow");
+        glow.setDisplaySize(sz * 2.5, sz * 2.5);
+        glow.setAlpha(0.5);
+        glow.name = "glow";
+        
+        this.tweens.add({
+          targets: glow,
+          alpha: 0.2,
+          scale: 1.2,
+          duration: 800,
+          yoyo: true,
+          repeat: -1
+        });
+
+        const sp = this.add.image(0, 0, "virus");
+        sp.setDisplaySize(sz, sz);
+        sp.name = "sprite";
+        
+        enemy = this.add.container(x, y);
+        enemy.add([glow, sp]);
+        this.enemies.add(enemy);
+      } else {
+        enemy.setPosition(x, y);
+        enemy.setActive(true).setVisible(true);
+        const sprite = enemy.getByName("sprite");
+        const glow = enemy.getByName("glow");
+        sprite.setDisplaySize(sz, sz);
+        glow.setDisplaySize(sz * 2.5, sz * 2.5);
+      }
+      
+      enemy.sz = sz;
+      enemy.dead = false;
     }
 
     update(_t, delta) {
@@ -565,30 +669,15 @@
 
       this.bg.tilePositionX += this.worldSpeed * dt;
 
-      if (this.wheelieTime > 0) this.wheelieTime -= dt;
-      const wh = this.wheelieTime > 0;
-
-      this.player.angle = Phaser.Math.Linear(
-        this.player.angle,
-        wh ? WHEELIE_ANGLE : 0,
-        8 * dt
-      );
-
-      if (this.bikeGlow) {
-        const center = this.player.getCenter();
-        this.bikeGlow.setPosition(center.x, center.y);
-        this.bikeGlow.angle = this.player.angle;
+      // Energy recharge
+      if (this.energy < MAX_ENERGY) {
+        this.energy = Math.min(MAX_ENERGY, this.energy + ENERGY_RECHARGE_RATE * dt);
+        this.updateEnergyBar();
       }
 
-      // Dust logic
-      if (wh && this.running) {
-        this.dust.setVisible(true);
-        this.dust.x = this.player.x + 10; // Slightly offset from the exact wheel contact
-        this.dust.y = this.groundY + 30; // Adjusted down by 100px as requested
-        if (!this.dust.anims.isPlaying) this.dust.play("dust_anim");
-      } else {
-        this.dust.setVisible(false);
-        this.dust.stop();
+      if (this.bikeGlow) {
+        this.bikeGlow.setPosition(this.player.x, this.player.y);
+        this.bikeGlow.angle = this.player.angle;
       }
 
       this.nextSpawnTimer -= dt;
@@ -603,19 +692,37 @@
       }
 
       const mv = this.worldSpeed * dt;
-      this.ingredients.getChildren().forEach(i => { i.x -= mv; });
-      this.enemies.getChildren().forEach(e => { e.x -= mv * 1.05; });
+      this.ingredients.getChildren().forEach(i => { 
+        if (i.active) {
+          i.x -= mv; 
+          if (i.x < -100) i.setActive(false).setVisible(false);
+        }
+      });
+      this.enemies.getChildren().forEach(e => { 
+        if (e.active) {
+          e.x -= mv * 1.05; 
+          if (e.x < -100) e.setActive(false).setVisible(false);
+        }
+      });
+      
+      // Laser movement and cleanup
+      this.lasers.getChildren().forEach(l => { 
+        if (l.active) {
+          l.x += LASER_SPEED * dt; 
+          if (l.x > this.scale.width + 100) l.setActive(false).setVisible(false);
+        }
+      });
 
       const box = {
         x: this.player.x - BIKE_DISPLAY_W * 0.15,
         y: this.player.y,
         width: BIKE_DISPLAY_W,
-        height: wh ? BIKE_DISPLAY_H * 1.4 : BIKE_DISPLAY_H,
+        height: BIKE_DISPLAY_H,
       };
 
       const hitEnemy = (b, o, s) => {
-        const ox = (o.originX === 0.5) ? o.x - s/2 : o.x;
-        const oy = (o.originY === 1) ? o.y - s : o.y;
+        const ox = (o.type === "Container" || o.originX === 0.5) ? o.x - s/2 : o.x;
+        const oy = (o.type === "Container" || o.originY === 0.5) ? o.y - s/2 : (o.originY === 1 ? o.y - s : o.y);
         return b.x < ox + s && b.x + b.width > ox &&
                b.y - b.height < oy + s && b.y > oy;
       };
@@ -628,14 +735,14 @@
       };
 
       this.ingredients.getChildren().forEach(i => {
-        if (i.collected) return;
-        const s = i.type === "Container" ? i.sz : i.displayWidth;
+        if (!i.active || i.collected) return;
+        const s = i.sz || i.displayWidth;
 
         if (hitPickup(box, i, s)) {
           const pType = i.pickupType || "ingredient";
-          const displayName = pType === "niancinamide" ? "Niacinamide" : "Methanol";
+          const displayName = pType === "niancinamide" ? "Niacinamide" : "B12";
           i.collected = true; 
-          i.destroy();
+          i.setActive(false).setVisible(false);
           this.score += 1;
           this.updateHud("Nice pick-up!");
           this.showFloatingText("+1 " + displayName);
@@ -645,26 +752,61 @@
       });
 
       this.enemies.getChildren().forEach(e => {
-        if (e.dead) return;
-        const s = e.displayWidth;
-        if (hitEnemy(box, e, s)) {
-          e.dead = true;
-          // Spawn explosion at enemy position
-          const exp = this.add.sprite(e.x, e.y - s/2, "explosion");
-          exp.setScale(s / 150); // Scale explosion relative to enemy size
-          exp.play("explode");
-          exp.on('animationcomplete', () => exp.destroy());
-          
-          e.destroy();
-          if (wh) {
-            this.score += 3;
-            this.updateHud("Enemy wiped out!");
-          } else {
-            this.lives -= 1;
-            this.updateHud("Hit! Lost a life.");
-            this.blinkPlayer();
-            if (this.hitSound) this.hitSound.play();
+        if (!e.active || e.dead) return;
+        const s = e.sz || e.displayWidth;
+
+        // Check laser hits
+        this.lasers.getChildren().forEach(l => {
+          if (!l.active) return;
+          const lx = l.x;
+          const ly = l.y;
+          const ex = e.x - s/2;
+          const ey = e.y - s/2; // Center-based now for container
+          if (lx > ex && lx < ex + s && ly > ey - s/2 && ly < ey + s/2) {
+            l.setActive(false).setVisible(false);
+            e.dead = true;
+            e.setActive(false).setVisible(false);
+            
+            // Explosion pooling
+            let exp = this.explosions.getFirstDead(false);
+            if (!exp) {
+              exp = this.add.sprite(e.x, e.y, "explosion");
+              this.explosions.add(exp);
+            } else {
+              exp.setPosition(e.x, e.y);
+              exp.setActive(true).setVisible(true);
+            }
+            exp.setScale(s / 150);
+            exp.play("explode");
+            exp.once('animationcomplete', () => exp.setActive(false).setVisible(false));
+            
+            this.score += 2;
+            this.updateHud("Enemy shot down!");
+            if (this.destroySound) this.destroySound.play();
           }
+        });
+
+        if (!e.dead && hitEnemy(box, e, s)) {
+          e.dead = true;
+          e.setActive(false).setVisible(false);
+          
+          // Explosion pooling
+          let exp = this.explosions.getFirstDead(false);
+          if (!exp) {
+            exp = this.add.sprite(e.x, e.y, "explosion");
+            this.explosions.add(exp);
+          } else {
+            exp.setPosition(e.x, e.y);
+            exp.setActive(true).setVisible(true);
+          }
+          exp.setScale(s / 150);
+          exp.play("explode");
+          exp.once('animationcomplete', () => exp.setActive(false).setVisible(false));
+          
+          this.lives -= 1;
+          this.updateHud("Hit! Lost a life.");
+          this.blinkPlayer();
+          if (this.hitSound) this.hitSound.play();
         }
       });
 
@@ -689,13 +831,23 @@
           this.bikeGlow.setVisible(false);
         }
 
-        // Keep game objects visible but stop movement
-        if (this.ingredients) this.ingredients.clear(true, true);
-        if (this.enemies) this.enemies.clear(true, true);
-        if (this.dust) {
-          this.dust.setVisible(false);
-          this.dust.stop();
-        }
+      // Keep game objects visible but stop movement
+      if (this.ingredients) {
+        this.ingredients.getChildren().forEach(i => i.setActive(false).setVisible(false));
+      }
+      if (this.enemies) {
+        this.enemies.getChildren().forEach(e => e.setActive(false).setVisible(false));
+      }
+      if (this.lasers) {
+        this.lasers.getChildren().forEach(l => l.setActive(false).setVisible(false));
+      }
+      if (this.explosions) {
+        this.explosions.getChildren().forEach(ex => ex.setActive(false).setVisible(false));
+      }
+      if (this.dust) {
+        this.dust.setVisible(false);
+        this.dust.stop();
+      }
 
         if (won) {
           if (this.victorySound) this.victorySound.play();

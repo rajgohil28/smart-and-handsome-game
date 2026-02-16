@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=1.1.9" />
+    <link rel="stylesheet" href="styles.css?v=1.8.5" />
     <!-- Phaser 3 for HTML5 2D creative (local, no CDN) -->
     <script src="assets/phaser.min.js"></script>
     <!-- Lottie for celebrations -->
@@ -32,6 +32,9 @@
         </div>
         <div class="hud-center">
           <span id="state">WHEELIE!</span>
+          <div class="energy-bar-container">
+            <div id="energy-bar" class="energy-bar-fill"></div>
+          </div>
         </div>
         <div class="hud-item hud-lives">
           <span class="hud-label">LIVES</span>
@@ -46,31 +49,14 @@
           <img src="assets/Images/SAH_LOGO.png" alt="Smart and Handsome Logo" class="overlay-logo-img" />
         </div>
         <div class="overlay-center">
-          <h1 class="overlay-title">THE DIRT DOGER</h1>
-          
-          <div class="overlay-instructions">
-            <div class="instruction-item">
-              <div class="instruction-icon wheelie"></div>
-              <p>TAP TO WHEELIE</p>
-            </div>
-            <div class="instruction-item">
-              <div class="instruction-icon collect"></div>
-              <p>COLLECT ITEMS</p>
-            </div>
-            <div class="instruction-item">
-              <div class="instruction-icon avoid"></div>
-              <p>DODGE VIRUS</p>
-            </div>
-          </div>
+          <img src="assets/Images/Modern-bike-game/Start_Instructions.png" alt="Start Instructions" class="start-instructions-img" />
 
-          <button id="start" class="overlay-btn">
-            <span>TAP TO START</span>
-            <svg class="overlay-cursor" width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M5 3l14 9-6 1.5L9.5 20z"/></svg>
+          <button id="start" class="overlay-btn-img">
+            <img src="assets/Images/Modern-bike-game/Start_btn.png" alt="START GAME" />
           </button>
-          <p class="overlay-tagline">Instant brightness, instant freshness</p>
         </div>
       </div>
     </main>
-    <script src="src/game.js?v=1.4.0"></script>
+    <script src="src/game.js?v=1.8.5"></script>
   </body>
 </html>
