@@ -77,7 +77,7 @@
       this.lives = 2;
       this.energy = MAX_ENERGY;
       this.nextSpawnTimer = 0;
-      this.worldSpeed = 455;
+      this.worldSpeed = 500;
       this.running = false;
       this.waitingToStart = false;
       this.groundY = 0;
@@ -326,7 +326,7 @@
 
       // Start Instructions Positioning
       if (this.startInstructions) {
-        this.startInstructions.setPosition(w / 2 + 50, h * 0.45 + 50);
+        this.startInstructions.setPosition(w / 2 + 50, h * 0.45 + 20);
         // Original logic was fitting to screen. User specified 637.05 x 372.
         // We'll maintain scaling logic but ensure it respects these proportions by using the texture's aspect ratio.
         // Phaser uses texture dims by default.
@@ -592,11 +592,13 @@
       }
     }
 
-    playWinCelebration(callback) {
+    playWinCelebration(won, callback) {
+      /*
       if (!lottieContainer || typeof lottie === "undefined") {
         callback();
         return;
       }
+      */
 
       const w = this.scale.width;
       const h = this.scale.height;
@@ -608,7 +610,8 @@
       celebrationOverlay.setAlpha(0);
 
       // Show end instructions during celebration
-      const endInstr = this.add.image(w / 2, h / 2 + 50, "end_instructions");
+      // Moved 30px up: h / 2 + 50 -> h / 2 + 20
+      const endInstr = this.add.image(w / 2, h / 2 + 20, "end_instructions");
       // Increased by 50% from 0.84 -> 1.26
       const instrScale = Math.min((w * 0.8) / endInstr.width, (h * 0.7) / endInstr.height) * 1.26;
       endInstr.setScale(instrScale);
@@ -618,7 +621,7 @@
       // Add tube image to the right of end instructions
       const tube = this.add.image(
         w / 2 + (endInstr.width * instrScale) / 2,
-        h / 2 + 50,
+        h / 2 + 20,
         "tube"
       );
       // Scale tube relative to instructions (reduced by 20% from 0.56 -> 0.448)
@@ -633,7 +636,7 @@
       // Add logo on top of end instructions
       const logo = this.add.image(
         w / 2,
-        endInstr.y - (endInstr.height * instrScale) / 2, // Top edge of instructions
+        endInstr.y - (endInstr.height * instrScale) / 2 + 30, // Top edge of instructions + 30px down
         "sah_logo"
       );
       // Scale logo to reasonable width relative to instructions
@@ -650,20 +653,25 @@
         duration: 500
       });
 
-      lottieContainer.style.display = "block";
-      const anim = lottie.loadAnimation({
-        container: lottieContainer,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: "assets/animations/Confetti - Full Screen.json"
-      });
+      let anim = null;
+      if (won && lottieContainer && typeof lottie !== "undefined") {
+        lottieContainer.style.display = "block";
+        anim = lottie.loadAnimation({
+          container: lottieContainer,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: "assets/animations/Confetti - Full Screen.json"
+        });
+      }
 
-      // Show for 5 seconds then callback
-      this.time.delayedCall(5000, () => {
-        anim.destroy();
-        lottieContainer.style.display = "none";
-        lottieContainer.innerHTML = "";
+      // Show for 4 seconds (Sustain it before end credits by 4 seconds)
+      this.time.delayedCall(4000, () => {
+        if (anim) anim.destroy();
+        if (lottieContainer) {
+            lottieContainer.style.display = "none";
+            lottieContainer.innerHTML = "";
+        }
         
         // Fade out everything before credits
         this.tweens.add({
@@ -1053,12 +1061,16 @@
 
         if (won) {
           if (this.victorySound) this.victorySound.play();
-          this.playWinCelebration(() => {
-            this.showEndScreen(true);
-          });
+        } 
+        // Always show post-game instructions (win or lose)
+        this.playWinCelebration(won, () => {
+          this.showEndScreen(won);
+        });
+        /*
         } else {
           this.showEndScreen(false);
         }
+        */
       }
     }
   }
