@@ -16,12 +16,8 @@
   function checkOrientation() {
     if (window.innerHeight > window.innerWidth) {
       rotatePrompt.style.display = "flex";
-      gameWrap.style.visibility = "hidden";
-      gameWrap.style.height = "0";
     } else {
       rotatePrompt.style.display = "none";
-      gameWrap.style.visibility = "visible";
-      gameWrap.style.height = "100%";
     }
   }
 
@@ -32,13 +28,13 @@
   });
 
   /* ---------- Constants ---------- */
-  const BIKE_DISPLAY_W = 160;
+  const BIKE_DISPLAY_W = 197;
   const BIKE_DISPLAY_H = 140;
   const LASER_SPEED = 1000;
   const SHOOT_COOLDOWN = 250; // ms
   const SHOOT_ENERGY_COST = 34;
   const ENERGY_RECHARGE_RATE = 20; // per second
-  const MAX_ENERGY = 100;
+  const MAX_ENERGY = 34; // Reduced by 2 shots (was 100, now allows only 1 shot)
   const ingredientsPalette = ["#f8d15b", "#6fd3f2", "#f48fa6", "#7ce3b1"];
 
   /* ---------- Scene ---------- */
@@ -52,11 +48,12 @@
       this.lasers = null;
       this.lastShootTime = 0;
       this.score = 0;
-      this.lives = 3;
+      this.lives = 2;
       this.energy = MAX_ENERGY;
       this.nextSpawnTimer = 0;
-      this.worldSpeed = 650;
+      this.worldSpeed = 455;
       this.running = false;
+      this.waitingToStart = false;
       this.groundY = 0;
     }
 
@@ -66,13 +63,10 @@
       });
 
       this.load.spritesheet("bike", "assets/Images/Modern-bike-game/Bike_Idle.png", {
-        frameWidth: 368,
-        frameHeight: 260
-      });
-      this.load.spritesheet("bike_pulsating", "assets/Images/Modern-bike-game/BIke_Pulsating.png", {
         frameWidth: 366,
         frameHeight: 260
       });
+      this.load.image("bike_glow_new", "assets/Images/Modern-bike-game/Bike-Glow-New.png");
       this.load.image("bg", "assets/Images/Modern-bike-game/Bg_new.png");
       this.load.audio("motorcycle", "assets/sounds/bike-sound-edited.mp3");
       this.load.audio("hit_sound", "assets/sounds/hit.mp3");
@@ -98,6 +92,9 @@
 
       this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
       this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions.png");
+      this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions.png");
+      this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
+      this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
     }
 
@@ -150,15 +147,6 @@
         });
       }
 
-      if (!this.anims.exists("bike_pickup_anim")) {
-        this.anims.create({
-          key: "bike_pickup_anim",
-          frames: this.anims.generateFrameNumbers("bike_pulsating", { start: 0, end: 4 }),
-          frameRate: 20,
-          repeat: 0
-        });
-      }
-
       this.bg = this.add.tileSprite(0, 0, w || 1280, h || 720, "bg");
       this.bg.setOrigin(0, 0);
       this.bg.setDepth(-1);
@@ -168,16 +156,16 @@
 
       this.player = this.add.sprite((w || 1280) * 0.18 - 50, this.groundY, "bike");
       this.player.setOrigin(0.15, 0.95);
-      this.player.setDepth(10);
+      this.player.setDepth(200);
       this.player.displayWidth = BIKE_DISPLAY_W;
       this.player.displayHeight = BIKE_DISPLAY_H;
       this.player.play("bike_anim");
 
-      this.bikeGlow = this.add.sprite(this.player.x, this.player.y, "bike_pulsating");
-      this.bikeGlow.setOrigin(0.15, 0.95); // Match player origin
-      this.bikeGlow.setDepth(11); 
-      this.bikeGlow.displayWidth = BIKE_DISPLAY_W;
-      this.bikeGlow.displayHeight = BIKE_DISPLAY_H;
+      this.bikeGlow = this.add.image(this.player.x, this.player.y, "bike_glow_new");
+      this.bikeGlow.setOrigin(0.5, 0.5); 
+      this.bikeGlow.setDepth(201); 
+      this.bikeGlow.displayWidth = BIKE_DISPLAY_W * 2.7;
+      this.bikeGlow.displayHeight = BIKE_DISPLAY_H * 2.7;
       this.bikeGlow.setAlpha(0);
       this.bikeGlow.setVisible(false);
 
@@ -187,6 +175,24 @@
       this.dust.setVisible(false);
       this.dust.play("dust_anim");
       this.dust.setScale(0.4);
+
+      // --- START SCREEN ELEMENTS (Phaser) ---
+      this.startLogo = this.add.image(0, 0, "sah_logo");
+      this.startLogo.setDepth(100);
+      this.startLogo.setVisible(false);
+
+      this.startScreenContainer = this.add.container(0, 0);
+      this.startScreenContainer.setDepth(101);
+      this.startScreenContainer.setVisible(false);
+
+      this.startInstructions = this.add.image(0, 0, "start_instructions");
+      this.startBtnSprite = this.add.image(0, 0, "start_btn");
+      this.startBtnSprite.setInteractive({ useHandCursor: true });
+      this.startBtnSprite.on("pointerover", () => this.startBtnSprite.setScale(this.startBtnSprite.scale * 1.05));
+      this.startBtnSprite.on("pointerout", () => this.startBtnSprite.setScale(this.startBtnSprite.scale / 1.05));
+      this.startBtnSprite.on("pointerdown", () => this.startGame());
+
+      this.startScreenContainer.add([this.startInstructions, this.startBtnSprite]);
 
       // --- OBJECT POOLING ---
       this.ingredients = this.add.group();
@@ -199,6 +205,7 @@
       this.scale.on("resize", this.onResize, this);
 
       this.resetGameState();
+      this.onResize(this.scale.gameSize);
       this.setupInput();
       this.running = false;
     }
@@ -254,8 +261,39 @@
       }
 
       if (this.bikeGlow) {
-        this.bikeGlow.setPosition(this.player.x, this.player.y);
+        this.bikeGlow.setPosition(
+          this.player.x + BIKE_DISPLAY_W * 0.35,
+          this.player.y - BIKE_DISPLAY_H * 0.45
+        );
         this.bikeGlow.angle = this.player.angle;
+      }
+
+      // --- Reposition Start Screen Elements ---
+      if (this.startLogo) {
+        // Logo at top left with some margin for safe area
+        const logoPadding = Math.max(30, w * 0.04);
+        const logoScale = Math.min((w * 0.25) / this.startLogo.width, (h * 0.2) / this.startLogo.height, 0.45);
+        this.startLogo.setScale(logoScale);
+        this.startLogo.setPosition(logoPadding + (this.startLogo.displayWidth * 0.5), logoPadding + (this.startLogo.displayHeight * 0.5));
+      }
+
+      if (this.startScreenContainer && this.startInstructions && this.startBtnSprite) {
+        const instrS = Math.min((w * 0.85) / this.startInstructions.width, (h * 0.6) / this.startInstructions.height);
+        this.startInstructions.setScale(instrS);
+        
+        const btnScale = Math.min((w * 0.25) / this.startBtnSprite.width, (h * 0.12) / this.startBtnSprite.height, 0.9);
+        this.startBtnSprite.setScale(btnScale);
+
+        const gap = 30;
+        const totalHeight = (this.startInstructions.height * instrS) + gap + (this.startBtnSprite.height * btnScale);
+        
+        // Position instructions at relative 0 (centered in container)
+        this.startInstructions.setPosition(0, -totalHeight/2 + (this.startInstructions.height * instrS * 0.5));
+        // Position button below instructions
+        this.startBtnSprite.setPosition(0, this.startInstructions.y + (this.startInstructions.height * instrS * 0.5) + gap + (this.startBtnSprite.height * btnScale * 0.5));
+        
+        // Center the container on screen
+        this.startScreenContainer.setPosition(w / 2, h / 2);
       }
 
       // Reposition end screen elements on resize
@@ -278,6 +316,29 @@
     }
 
     shoot() {
+      if (this.waitingToStart) {
+        this.waitingToStart = false;
+        const startElements = [];
+        if (this.startScreenContainer) startElements.push(this.startScreenContainer);
+        if (this.startLogo) startElements.push(this.startLogo);
+
+        if (startElements.length > 0) {
+          this.tweens.add({
+            targets: startElements,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              startElements.forEach(el => el.setVisible(false));
+            }
+          });
+        }
+        if (this.motorcycleSound) {
+          this.motorcycleSound.play();
+        }
+        this.updateHud("Go!");
+        return;
+      }
+
       const now = this.time.now;
       if (now - this.lastShootTime < SHOOT_COOLDOWN) return;
       if (this.energy < SHOOT_ENERGY_COST) {
@@ -316,11 +377,11 @@
 
     resetGameState() {
       this.score = 0;
-      this.lives = 3;
+      this.lives = 2;
       this.energy = MAX_ENERGY;
       this.updateEnergyBar();
       this.lastShootTime = 0;
-      this.nextSpawnTimer = 5; // Start spawning after 5 seconds
+      this.nextSpawnTimer = 1; // Spawning will start 1s after first tap
       if (this.ingredients) this.ingredients.clear(true, true);
       if (this.enemies) this.enemies.clear(true, true);
       if (this.lasers) this.lasers.clear(true, true);
@@ -337,10 +398,20 @@
         this.player.play("bike_anim", true);
       }
       if (this.bikeGlow) {
-        this.bikeGlow.x = this.player.x;
-        this.bikeGlow.y = this.player.y;
+        this.bikeGlow.setPosition(
+          this.player.x + BIKE_DISPLAY_W * 0.35,
+          this.player.y - BIKE_DISPLAY_H * 0.45
+        );
         this.bikeGlow.setVisible(false);
         this.bikeGlow.setAlpha(0);
+      }
+      if (this.startScreenContainer) {
+        this.startScreenContainer.setVisible(true);
+        this.startScreenContainer.setAlpha(1);
+      }
+      if (this.startLogo) {
+        this.startLogo.setVisible(true);
+        this.startLogo.setAlpha(1);
       }
       if (this.dust) {
         this.dust.setVisible(false);
@@ -348,7 +419,7 @@
       if (this.bg) {
         this.bg.setVisible(true);
       }
-      this.updateHud("Tap anywhere to shoot");
+      this.updateHud("Tap anywhere to start");
     }
 
     startGame() {
@@ -367,12 +438,9 @@
 
       this.resetGameState();
       this.running = true;
+      this.waitingToStart = true;
 
       if (this.victorySound) this.victorySound.stop();
-
-      if (this.motorcycleSound) {
-        this.motorcycleSound.play();
-      }
     }
 
     showEndScreen(won) {
@@ -590,17 +658,21 @@
     triggerPickGlow() {
       if (!this.bikeGlow || !this.player) return;
       
-      // Hide regular player and show pulsating player
-      this.player.setVisible(false);
       this.bikeGlow.setVisible(true);
-      this.bikeGlow.setAlpha(1);
-      this.bikeGlow.play("bike_pickup_anim");
+      this.bikeGlow.setAlpha(0);
       
-      this.bikeGlow.once('animationcomplete', () => {
-        if (this.bikeGlow && this.player) {
-          this.bikeGlow.setVisible(false);
-          this.bikeGlow.setAlpha(0);
-          this.player.setVisible(true);
+      // Pulsate the glow for 2 seconds (250ms * 2 (yoyo) * 4 cycles = 2000ms)
+      this.tweens.add({
+        targets: this.bikeGlow,
+        alpha: 1,
+        duration: 250,
+        yoyo: true,
+        repeat: 3,
+        onComplete: () => {
+          if (this.bikeGlow) {
+            this.bikeGlow.setVisible(false);
+            this.bikeGlow.setAlpha(0);
+          }
         }
       });
     }
@@ -698,7 +770,7 @@
     }
 
     update(_t, delta) {
-      if (!this.running) return;
+      if (!this.running || this.waitingToStart) return;
       const dt = delta / 1000;
 
       this.bg.tilePositionX += this.worldSpeed * dt;
@@ -710,7 +782,10 @@
       }
 
       if (this.bikeGlow) {
-        this.bikeGlow.setPosition(this.player.x, this.player.y);
+        this.bikeGlow.setPosition(
+          this.player.x + BIKE_DISPLAY_W * 0.35,
+          this.player.y - BIKE_DISPLAY_H * 0.45
+        );
         this.bikeGlow.angle = this.player.angle;
       }
 
@@ -897,7 +972,7 @@
 
   /* ---------- Phaser ---------- */
   new Phaser.Game({
-    type: Phaser.CANVAS,
+    type: Phaser.AUTO,
     scale: {
       mode: Phaser.Scale.RESIZE,
       parent: "game-container",
