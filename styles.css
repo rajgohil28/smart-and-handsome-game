@@ -248,18 +248,10 @@ body {
   width: 100%;
   height: 100%;
   z-index: 99999;
-  background: rgba(26, 26, 46, 0.6); /* Reduced opacity */
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.85); /* Darker tint as requested */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   color: #fff;
-  /* Use flexbox but allow clicks to pass through if we want game interaction, 
-     though usually prompt blocks interaction. 
-     User said "game is seen" so we keep it visible but maybe interactive? 
-     If it's just instructions, pointer-events: none allows playing while seeing prompt.
-     If it's a blocking prompt "Please rotate", then pointer-events: auto.
-     Given "force landscape", user can play in portrait.
-     So we make the prompt non-blocking for clicks so they can tap "Start".
-  */
   pointer-events: none;
   justify-content: center;
   align-items: center;
@@ -271,7 +263,32 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  justify-content: space-evenly; /* Distribute items vertically */
+  padding: 20px 0;
+}
+
+.rotate-logo {
+  width: clamp(150px, 40vw, 300px);
+  height: auto;
+  margin-top: 20px;
+}
+
+.rotate-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rotate-bike {
+  width: clamp(800px, 240vw, 1600px);
+  height: auto;
+  margin-bottom: 20px;
+  filter: brightness(0.3);
+  opacity: 1;
 }
 
 .rotate-inner svg {

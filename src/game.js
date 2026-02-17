@@ -57,9 +57,9 @@
   const BIKE_DISPLAY_W = 197;
   const BIKE_DISPLAY_H = 140;
   const LASER_SPEED = 1000;
-  const SHOOT_COOLDOWN = 75; // ms (Reduced by 50% from 150)
-  const SHOOT_ENERGY_COST = 34;
-  const ENERGY_RECHARGE_RATE = 20; // per second
+  const SHOOT_COOLDOWN = 37; // ms (Reduced by 50% from 75)
+  const SHOOT_ENERGY_COST = 33;
+  const ENERGY_RECHARGE_RATE = 68; // per second (Increased to fill in 0.5s)
   const MAX_ENERGY = 34; // Reduced by 2 shots (was 100, now allows only 1 shot)
   const ingredientsPalette = ["#f8d15b", "#6fd3f2", "#f48fa6", "#7ce3b1"];
 
@@ -121,6 +121,7 @@
       this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
+      this.load.image("dust_obstacle", "assets/Images/Modern-bike-game/Dust.png");
     }
 
     create() {
@@ -249,6 +250,7 @@
       // --- OBJECT POOLING ---
       this.ingredients = this.add.group();
       this.enemies = this.add.group();
+      this.dustObstacles = this.add.group();
       this.lasers = this.add.group();
       this.explosions = this.add.group();
 
@@ -274,6 +276,12 @@
         this.spawnEnemy();
       }
       this.enemies.getChildren().forEach(enemy => enemy.setActive(false).setVisible(false));
+
+      // Pre-create 3 dust obstacles
+      for (let i = 0; i < 3; i++) {
+        this.spawnDustObstacle();
+      }
+      this.dustObstacles.getChildren().forEach(d => d.setActive(false).setVisible(false));
 
       // Pre-create 12 lasers
       for (let i = 0; i < 12; i++) {
@@ -326,7 +334,7 @@
 
       // Start Instructions Positioning
       if (this.startInstructions) {
-        this.startInstructions.setPosition(w / 2 + 50, h * 0.45 + 20);
+        this.startInstructions.setPosition(w / 2, h / 2);
         // Original logic was fitting to screen. User specified 637.05 x 372.
         // We'll maintain scaling logic but ensure it respects these proportions by using the texture's aspect ratio.
         // Phaser uses texture dims by default.
@@ -338,7 +346,7 @@
         if (this.startBtn) {
           const instrHalfHeight = (this.startInstructions.height * s) / 2;
           const instrBottom = this.startInstructions.y + instrHalfHeight;
-          this.startBtn.setPosition(w / 2 + 10, instrBottom + h * 0.08 - 80);
+          this.startBtn.setPosition(w / 2, instrBottom + h * 0.08 - 80);
           
           const btnScale = Math.min(w * 0.35 / this.startBtn.width, h * 0.12 / this.startBtn.height);
           this.startBtn.setScale(btnScale);
@@ -459,6 +467,7 @@
       this.nextSpawnTimer = 1; // Spawning will start 1s after first tap
       if (this.ingredients) this.ingredients.clear(true, true);
       if (this.enemies) this.enemies.clear(true, true);
+      if (this.dustObstacles) this.dustObstacles.clear(true, true);
       if (this.lasers) this.lasers.clear(true, true);
       if (this.explosions) this.explosions.clear(true, true);
 
@@ -870,6 +879,27 @@
       enemy.dead = false;
     }
 
+    spawnDustObstacle() {
+      const w = 250;
+      const h = 150;
+      const x = this.scale.width + 150;
+      const y = this.groundY - h / 2 + 30; // Closer to ground
+
+      let dust = this.dustObstacles.getFirstDead(false);
+      if (!dust) {
+        dust = this.add.image(x, y, "dust_obstacle");
+        this.dustObstacles.add(dust);
+      } else {
+        dust.setPosition(x, y);
+        dust.setActive(true).setVisible(true);
+        dust.setAlpha(1); // Reset alpha if it faded out
+      }
+      
+      dust.setDisplaySize(w, h);
+      dust.sz = w * 0.7; // Smaller hit box width
+      dust.hit = false;
+    }
+
     update(_t, delta) {
       if (!this.running || this.waitingToStart) return;
       const dt = delta / 1000;
@@ -892,9 +922,12 @@
 
       this.nextSpawnTimer -= dt;
       if (this.nextSpawnTimer <= 0) {
-        if (Math.random() < 0.35) {
+        const rand = Math.random();
+        if (rand < 0.15) { // 15% chance for Dust Obstacle
+          this.spawnDustObstacle();
+        } else if (rand < 0.45) { // 30% chance for Enemy (Virus)
           this.spawnEnemy();
-        } else {
+        } else { // 55% chance for Ingredient
           this.spawnIngredient();
         }
         // Random distance: at least 0.9s to 1.5s between spawns for high speed spacing
@@ -912,6 +945,12 @@
         if (e.active) {
           e.x -= mv * 1.05; 
           if (e.x < -100) e.setActive(false).setVisible(false);
+        }
+      });
+      this.dustObstacles.getChildren().forEach(d => {
+        if (d.active) {
+          d.x -= mv;
+          if (d.x < -200) d.setActive(false).setVisible(false);
         }
       });
       
@@ -944,6 +983,15 @@
                b.y - b.height < oy + sz && b.y > oy;
       };
 
+      const hitDust = (b, d) => {
+        const szW = d.displayWidth * 0.7; // Smaller hit box
+        const szH = d.displayHeight * 0.7;
+        const ox = d.x - szW/2;
+        const oy = d.y - szH/2;
+        return b.x < ox + szW && b.x + b.width > ox &&
+               b.y - b.height < oy + szH && b.y > oy;
+      };
+
       this.ingredients.getChildren().forEach(i => {
         if (!i.active || i.collected) return;
         const s = i.sz || i.displayWidth;
@@ -958,6 +1006,24 @@
           this.showFloatingText("+1 " + displayName);
           this.triggerPickGlow();
           if (this.coinSound) this.coinSound.play();
+        }
+      });
+      
+      this.dustObstacles.getChildren().forEach(d => {
+        if (!d.active || d.hit) return;
+        
+        if (hitDust(box, d)) {
+          d.hit = true;
+          this.score = Math.max(0, this.score - 3);
+          this.updateHud("Cough! Cough!");
+          this.showFloatingText("-3 Score");
+          
+          this.tweens.add({
+            targets: d,
+            alpha: 0,
+            duration: 200,
+            onComplete: () => d.setActive(false).setVisible(false)
+          });
         }
       });
 
@@ -1022,6 +1088,7 @@
 
       this.ingredients.getChildren().forEach(i => { if (i.x < -80) i.destroy(); });
       this.enemies.getChildren().forEach(e => { if (e.x < -80) e.destroy(); });
+      this.dustObstacles.getChildren().forEach(d => { if (d.x < -80) d.destroy(); });
 
       // End Game Conditions
       if (this.lives <= 0 || this.score >= 40) {
@@ -1047,6 +1114,9 @@
       }
       if (this.enemies) {
         this.enemies.getChildren().forEach(e => e.setActive(false).setVisible(false));
+      }
+      if (this.dustObstacles) {
+        this.dustObstacles.getChildren().forEach(d => d.setActive(false).setVisible(false));
       }
       if (this.lasers) {
         this.lasers.getChildren().forEach(l => l.setActive(false).setVisible(false));
