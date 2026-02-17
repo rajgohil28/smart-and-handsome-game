@@ -84,8 +84,8 @@
       });
       
       // New Pickups
-      this.load.image("niancinamide", "assets/Images/Modern-bike-game/Niancinamide_new.png");
-      this.load.image("b12", "assets/Images/Modern-bike-game/B12_new.png");
+      this.load.image("niancinamide", "assets/Images/Modern-bike-game/Niancinamide_2.png");
+      this.load.image("b12", "assets/Images/Modern-bike-game/B12_2.png");
       this.load.image("methanol_glow", "assets/Images/Methanol _glow_gradient.png");
       this.load.image("virus", "assets/Images/Modern-bike-game/Enemy_Virus.png");
       this.load.image("virus_glow", "assets/Images/Modern-bike-game/Enemy_Glow.png");
@@ -164,8 +164,9 @@
       this.bikeGlow = this.add.image(this.player.x, this.player.y, "bike_glow_new");
       this.bikeGlow.setOrigin(0.5, 0.5); 
       this.bikeGlow.setDepth(201); 
-      this.bikeGlow.displayWidth = BIKE_DISPLAY_W * 2.7;
-      this.bikeGlow.displayHeight = BIKE_DISPLAY_H * 2.7;
+      const glowScale = 415 / BIKE_DISPLAY_H;
+      this.bikeGlow.displayWidth = BIKE_DISPLAY_W * glowScale;
+      this.bikeGlow.displayHeight = 415;
       this.bikeGlow.setAlpha(0);
       this.bikeGlow.setVisible(false);
 
@@ -176,23 +177,6 @@
       this.dust.play("dust_anim");
       this.dust.setScale(0.4);
 
-      // --- START SCREEN ELEMENTS (Phaser) ---
-      this.startLogo = this.add.image(0, 0, "sah_logo");
-      this.startLogo.setDepth(100);
-      this.startLogo.setVisible(false);
-
-      this.startScreenContainer = this.add.container(0, 0);
-      this.startScreenContainer.setDepth(101);
-      this.startScreenContainer.setVisible(false);
-
-      this.startInstructions = this.add.image(0, 0, "start_instructions");
-      this.startBtnSprite = this.add.image(0, 0, "start_btn");
-      this.startBtnSprite.setInteractive({ useHandCursor: true });
-      this.startBtnSprite.on("pointerover", () => this.startBtnSprite.setScale(this.startBtnSprite.scale * 1.05));
-      this.startBtnSprite.on("pointerout", () => this.startBtnSprite.setScale(this.startBtnSprite.scale / 1.05));
-      this.startBtnSprite.on("pointerdown", () => this.startGame());
-
-      this.startScreenContainer.add([this.startInstructions, this.startBtnSprite]);
 
       // --- OBJECT POOLING ---
       this.ingredients = this.add.group();
@@ -268,33 +252,6 @@
         this.bikeGlow.angle = this.player.angle;
       }
 
-      // --- Reposition Start Screen Elements ---
-      if (this.startLogo) {
-        // Logo at top left with some margin for safe area
-        const logoPadding = Math.max(30, w * 0.04);
-        const logoScale = Math.min((w * 0.25) / this.startLogo.width, (h * 0.2) / this.startLogo.height, 0.45);
-        this.startLogo.setScale(logoScale);
-        this.startLogo.setPosition(logoPadding + (this.startLogo.displayWidth * 0.5), logoPadding + (this.startLogo.displayHeight * 0.5));
-      }
-
-      if (this.startScreenContainer && this.startInstructions && this.startBtnSprite) {
-        const instrS = Math.min((w * 0.85) / this.startInstructions.width, (h * 0.6) / this.startInstructions.height);
-        this.startInstructions.setScale(instrS);
-        
-        const btnScale = Math.min((w * 0.25) / this.startBtnSprite.width, (h * 0.12) / this.startBtnSprite.height, 0.9);
-        this.startBtnSprite.setScale(btnScale);
-
-        const gap = 30;
-        const totalHeight = (this.startInstructions.height * instrS) + gap + (this.startBtnSprite.height * btnScale);
-        
-        // Position instructions at relative 0 (centered in container)
-        this.startInstructions.setPosition(0, -totalHeight/2 + (this.startInstructions.height * instrS * 0.5));
-        // Position button below instructions
-        this.startBtnSprite.setPosition(0, this.startInstructions.y + (this.startInstructions.height * instrS * 0.5) + gap + (this.startBtnSprite.height * btnScale * 0.5));
-        
-        // Center the container on screen
-        this.startScreenContainer.setPosition(w / 2, h / 2);
-      }
 
       // Reposition end screen elements on resize
       if (this.endCreditsImg) {
@@ -317,21 +274,17 @@
 
     shoot() {
       if (this.waitingToStart) {
-        this.waitingToStart = false;
-        const startElements = [];
-        if (this.startScreenContainer) startElements.push(this.startScreenContainer);
-        if (this.startLogo) startElements.push(this.startLogo);
+        // Prevent immediate start from the same click
+        if (this.time.now - (this.startClickTime || 0) < 200) return;
 
-        if (startElements.length > 0) {
-          this.tweens.add({
-            targets: startElements,
-            alpha: 0,
-            duration: 500,
-            onComplete: () => {
-              startElements.forEach(el => el.setVisible(false));
-            }
-          });
+        this.waitingToStart = false;
+
+        // Request fullscreen on first tap
+        if (this.scale.fullscreenSupported) {
+          this.scale.startFullscreen();
         }
+
+
         if (this.motorcycleSound) {
           this.motorcycleSound.play();
         }
@@ -405,14 +358,7 @@
         this.bikeGlow.setVisible(false);
         this.bikeGlow.setAlpha(0);
       }
-      if (this.startScreenContainer) {
-        this.startScreenContainer.setVisible(true);
-        this.startScreenContainer.setAlpha(1);
-      }
-      if (this.startLogo) {
-        this.startLogo.setVisible(true);
-        this.startLogo.setAlpha(1);
-      }
+      
       if (this.dust) {
         this.dust.setVisible(false);
       }
@@ -426,19 +372,11 @@
       if (overlay) overlay.style.display = "none";
       if (hudEl) hudEl.style.display = "flex";
 
-      // Request fullscreen using Phaser's scale manager (more robust for mobile)
-      if (this.scale.fullscreenSupported) {
-        this.scale.startFullscreen();
-      } else {
-        // Fallback for browsers with restricted Fullscreen API (like some iOS versions)
-        const el = document.documentElement;
-        const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-        if (rfs) rfs.call(el).catch(() => {});
-      }
-
       this.resetGameState();
       this.running = true;
       this.waitingToStart = true;
+      this.startClickTime = this.time.now; // Record when they clicked start
+
 
       if (this.victorySound) this.victorySound.stop();
     }
@@ -450,7 +388,7 @@
       // Full screen end credits image
       this.endCreditsImg = this.add.image(w / 2, h / 2, "end_credits");
       this.endCreditsImg.setDisplaySize(w, h);
-      this.endCreditsImg.setDepth(100);
+      this.endCreditsImg.setDepth(400);
       this.endCreditsImg.setAlpha(0);
 
       // Buttons container or positioning
@@ -469,7 +407,7 @@
         strokeThickness: 4
       });
       this.visitBtnText.setOrigin(0.5);
-      this.visitBtnText.setDepth(104);
+      this.visitBtnText.setDepth(404);
       this.visitBtnText.setAlpha(0);
 
       this.visitBtnBg = this.add.rectangle(
@@ -479,7 +417,7 @@
         0xc6422c
       );
       this.visitBtnBg.setOrigin(0.5);
-      this.visitBtnBg.setDepth(103);
+      this.visitBtnBg.setDepth(403);
       this.visitBtnBg.setAlpha(0);
       this.visitBtnBg.setInteractive({ useHandCursor: true });
       this.visitBtnBg.on("pointerover", () => this.visitBtnBg.setFillStyle(0xa83520));
@@ -679,7 +617,7 @@
 
     spawnIngredient() {
       const type = Math.random() < 0.5 ? "niancinamide" : "b12";
-      const sz = (60 + Math.random() * 20) * 1.3 * 2; 
+      const sz = 80 * 1.3 * 2; 
       const y = this.groundY - sz / 2 + 5; 
       const x = this.scale.width + 80;
 

@@ -147,7 +147,88 @@ body {
 
 
 /* ---------- Rotate-to-landscape prompt ---------- */
+@media (orientation: portrait) {
+  #overlay {
+    display: none !important;
+  }
+}
 
+/* ---------- Overlay (Welcome Screen) ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* --- Logo badge --- */
+.overlay-logo {
+  position: absolute;
+  top: clamp(20px, 8vh, 60px);
+  left: 40px;
+  background: #1a1a2e;
+  padding: clamp(4px, 0.8vw, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.overlay-logo-img {
+  width: clamp(120px, 28vh, 320px);
+  height: auto;
+  display: block;
+}
+
+/* --- Center content --- */
+.overlay-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4vh;
+  padding: 0 16px;
+  /* slight vertical offset to sit above bike */
+  margin-top: -4vh;
+}
+
+.start-instructions-img {
+  max-width: 95%;
+  max-height: 60vh;
+  object-fit: contain;
+  margin-bottom: 0;
+}
+
+.overlay-btn-img {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  margin-top: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.overlay-btn-img img {
+  height: clamp(50px, 12vh, 80px);
+  width: auto;
+  display: block;
+}
+
+.overlay-btn-img:hover {
+  transform: scale(1.05);
+}
+
+.overlay-btn-img:active {
+  transform: scale(0.95);
+}
+
+/* ---------- Rotate-to-landscape prompt ---------- */
 .rotate-prompt {
   display: none; /* Controlled by JS now */
   position: fixed;
