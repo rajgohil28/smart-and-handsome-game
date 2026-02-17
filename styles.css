@@ -148,11 +148,21 @@ body {
 
 
 /* ---------- Rotate-to-landscape prompt ---------- */
-@media (orientation: portrait) {
+.force-landscape {
+  width: 100vh !important;
+  height: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 100% !important;
+  transform: rotate(90deg);
+  transform-origin: top left;
+}
+
+/* @media (orientation: portrait) {
   #overlay {
     display: none !important;
   }
-}
+} */
 
 /* ---------- Overlay (Welcome Screen) ---------- */
 .overlay {
@@ -238,10 +248,19 @@ body {
   width: 100%;
   height: 100%;
   z-index: 99999;
-  background: rgba(26, 26, 46, 0.9); /* Match game theme but semi-transparent */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(26, 26, 46, 0.6); /* Reduced opacity */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   color: #fff;
+  /* Use flexbox but allow clicks to pass through if we want game interaction, 
+     though usually prompt blocks interaction. 
+     User said "game is seen" so we keep it visible but maybe interactive? 
+     If it's just instructions, pointer-events: none allows playing while seeing prompt.
+     If it's a blocking prompt "Please rotate", then pointer-events: auto.
+     Given "force landscape", user can play in portrait.
+     So we make the prompt non-blocking for clicks so they can tap "Start".
+  */
+  pointer-events: none;
   justify-content: center;
   align-items: center;
   overflow: hidden;

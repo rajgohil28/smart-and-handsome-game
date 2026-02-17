@@ -14,24 +14,50 @@
 
   /* ---------- Orientation enforcement ---------- */
   function checkOrientation() {
+    // If in portrait mode, force landscape via CSS rotation
     if (window.innerHeight > window.innerWidth) {
-      rotatePrompt.style.display = "flex";
+      gameWrap.classList.add("force-landscape");
     } else {
-      rotatePrompt.style.display = "none";
+      gameWrap.classList.remove("force-landscape");
     }
+    /*
+    // Always hide the rotate prompt as we are handling it by forcing landscape
+    rotatePrompt.style.display = "none";
+    */
+    if (window.innerHeight > window.innerWidth) {
+        rotatePrompt.style.display = "flex";
+        gameWrap.classList.add("force-landscape");
+    } else {
+        rotatePrompt.style.display = "none";
+        gameWrap.classList.remove("force-landscape");
+    }
+    
+    // Refresh Phaser scale to match new dimensions
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+        if (window.game) {
+          window.game.scale.refresh();
+        }
+        window.dispatchEvent(new Event("resize"));
+    }, 200);
   }
 
   window.addEventListener("load", checkOrientation);
   window.addEventListener("resize", checkOrientation);
   window.addEventListener("orientationchange", function () {
     setTimeout(checkOrientation, 100);
+    // Force browser to re-check dimensions and fire resize for Phaser
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      window.dispatchEvent(new Event("resize"));
+    }, 500);
   });
 
   /* ---------- Constants ---------- */
   const BIKE_DISPLAY_W = 197;
   const BIKE_DISPLAY_H = 140;
   const LASER_SPEED = 1000;
-  const SHOOT_COOLDOWN = 150; // ms (Reduced by 40% from 250)
+  const SHOOT_COOLDOWN = 75; // ms (Reduced by 50% from 150)
   const SHOOT_ENERGY_COST = 34;
   const ENERGY_RECHARGE_RATE = 20; // per second
   const MAX_ENERGY = 34; // Reduced by 2 shots (was 100, now allows only 1 shot)
@@ -76,10 +102,7 @@
       this.load.audio("victory_sound", "assets/sounds/Victory.mp3");
       this.load.audio("laser_sound", "assets/sounds/laser.mp3");
       this.load.audio("destroy_sound", "assets/sounds/Destroy.mp3");
-      this.load.spritesheet("explosion", "assets/animations/Dustexplosion.png", {
-        frameWidth: 600,
-        frameHeight: 525
-      });
+      this.load.image("explosion", "assets/Images/Modern-bike-game/Blast_new.png");
       this.load.spritesheet("bike_dust", "assets/Images/Bike-Dust.png", {
         frameWidth: 480,
         frameHeight: 436
@@ -123,12 +146,30 @@
       });
 
       if (!this.anims.exists("explode")) {
-        this.anims.create({
-          key: "explode",
-          frames: this.anims.generateFrameNumbers("explosion", { start: 0, end: 4 }),
-          duration: 300,
-          repeat: 0
-        });
+        // Dynamically slice the explosion image into 5 frames (1 row, 5 cols)
+        const texture = this.textures.get("explosion");
+        if (texture && texture.source[0]) {
+          const imgW = texture.source[0].width;
+          const imgH = texture.source[0].height;
+          const frameW = imgW / 5;
+          const frameH = imgH;
+          
+          const frames = [];
+          for (let i = 0; i < 5; i++) {
+            // Add frame if it doesn't exist (using numeric keys 0-4)
+            if (!texture.has(i)) {
+              texture.add(i, 0, i * frameW, 0, frameW, frameH);
+            }
+            frames.push({ key: "explosion", frame: i });
+          }
+
+          this.anims.create({
+            key: "explode",
+            frames: frames,
+            frameRate: 20,
+            repeat: 0
+          });
+        }
       }
 
       if (!this.anims.exists("dust_anim")) {
@@ -748,47 +789,35 @@
 
       let item = this.ingredients.getFirstDead(false);
       if (!item) {
-        const glow = this.add.image(0, 0, "methanol_glow");
-        glow.setDisplaySize(sz * 2.5, sz * 2.5);
-        glow.setAlpha(0.6);
-        glow.name = "glow";
+        // Removed methanol_glow_gradient as requested
         
-        this.tweens.add({
-          targets: glow,
-          alpha: 0.2,
-          scale: (sz * 1.8) / 512,
-          duration: 1200,
-          yoyo: true,
-          repeat: -1
-        });
-
         const sp = this.add.image(0, 0, type);
         sp.setDisplaySize(sz, sz);
         sp.name = "sprite";
         
         item = this.add.container(x, y);
-        item.add([glow, sp]);
+        item.add([sp]);
         this.ingredients.add(item);
       } else {
         item.setPosition(x, y);
         item.setActive(true).setVisible(true);
-        const glow = item.getByName("glow");
+        // const glow = item.getByName("glow"); // Removed
         const sprite = item.getByName("sprite");
         sprite.setTexture(type);
         sprite.setDisplaySize(sz, sz);
-        glow.setDisplaySize(sz * 2.5, sz * 2.5);
+        // glow.setDisplaySize(sz * 2.5, sz * 2.5); // Removed
       }
 
       item.pickupType = type;
       item.sz = sz;
       item.collected = false;
 
-      const glow = item.getByName("glow");
-      if (type === "niancinamide") {
-        glow.setTint(0x7ce3b1);
-      } else {
-        glow.setTint(0x38bdf8);
-      }
+      // const glow = item.getByName("glow"); // Removed
+      // if (type === "niancinamide") {
+      //   glow.setTint(0x7ce3b1);
+      // } else {
+      //   glow.setTint(0x38bdf8);
+      // }
     }
 
     spawnEnemy() {
@@ -1035,7 +1064,7 @@
   }
 
   /* ---------- Phaser ---------- */
-  new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     scale: {
       mode: Phaser.Scale.RESIZE,
@@ -1048,4 +1077,7 @@
     scene: [MainScene],
     fps: { target: 60 },
   });
+  
+  // Expose game instance for resize handling
+  window.game = game;
 })();
