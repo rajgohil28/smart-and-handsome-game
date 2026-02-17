@@ -31,7 +31,7 @@
   const BIKE_DISPLAY_W = 197;
   const BIKE_DISPLAY_H = 140;
   const LASER_SPEED = 1000;
-  const SHOOT_COOLDOWN = 250; // ms
+  const SHOOT_COOLDOWN = 150; // ms (Reduced by 40% from 250)
   const SHOOT_ENERGY_COST = 34;
   const ENERGY_RECHARGE_RATE = 20; // per second
   const MAX_ENERGY = 34; // Reduced by 2 shots (was 100, now allows only 1 shot)
@@ -55,6 +55,8 @@
       this.running = false;
       this.waitingToStart = false;
       this.groundY = 0;
+      this.darkOverlay = null; // For start screen
+      this.endOverlay = null;  // For end screen
     }
 
     preload() {
@@ -92,7 +94,7 @@
 
       this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
       this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions.png");
-      this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions.png");
+      this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions_New.png");
       this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
@@ -154,6 +156,12 @@
       this.bg.tileScaleX = bgScale;
       this.bg.tileScaleY = bgScale;
 
+      // Dark Overlay for Welcome Screen
+      this.darkOverlay = this.add.rectangle(0, 0, w, h, 0x000000, 0.85);
+      this.darkOverlay.setOrigin(0, 0);
+      this.darkOverlay.setDepth(210); // Above bike (200)
+      this.darkOverlay.setVisible(true);
+
       this.player = this.add.sprite((w || 1280) * 0.18 - 50, this.groundY, "bike");
       this.player.setOrigin(0.15, 0.95);
       this.player.setDepth(200);
@@ -165,7 +173,7 @@
       this.bikeGlow.setOrigin(0.5, 0.5); 
       this.bikeGlow.setDepth(201); 
       const glowScale = 415 / BIKE_DISPLAY_H;
-      this.bikeGlow.displayWidth = BIKE_DISPLAY_W * glowScale;
+      this.bikeGlow.displayWidth = BIKE_DISPLAY_W * glowScale * 0.8; // Reduced width by 20%
       this.bikeGlow.displayHeight = 415;
       this.bikeGlow.setAlpha(0);
       this.bikeGlow.setVisible(false);
@@ -176,6 +184,25 @@
       this.dust.setVisible(false);
       this.dust.play("dust_anim");
       this.dust.setScale(0.4);
+
+      // Start Instructions & Button
+      this.startInstructions = this.add.image(w / 2, h / 2, "start_instructions");
+      this.startInstructions.setDepth(220);
+      this.startInstructions.setVisible(true);
+
+      this.startBtn = this.add.image(w / 2, h / 2, "start_btn");
+      this.startBtn.setDepth(225);
+      this.startBtn.setVisible(true);
+      this.startBtn.setInteractive({ useHandCursor: true });
+      this.startBtn.on("pointerdown", () => {
+        if (!this.running) {
+          this.startGame();
+          this.startClickTime = 0; // Bypass debounce
+          this.shoot();
+        } else if (this.waitingToStart) {
+          this.shoot();
+        }
+      });
 
 
       // --- OBJECT POOLING ---
@@ -239,6 +266,10 @@
         this.bg.tileScaleX = s;
         this.bg.tileScaleY = s;
       }
+      if (this.darkOverlay) {
+        this.darkOverlay.setSize(w, h);
+      }
+
       if (this.player) {
         this.player.x = w * 0.18 - 50;
         this.player.y = this.groundY;
@@ -252,12 +283,41 @@
         this.bikeGlow.angle = this.player.angle;
       }
 
+      // Start Instructions Positioning
+      if (this.startInstructions) {
+        this.startInstructions.setPosition(w / 2 + 50, h * 0.45 + 50);
+        // Original logic was fitting to screen. User specified 637.05 x 372.
+        // We'll maintain scaling logic but ensure it respects these proportions by using the texture's aspect ratio.
+        // Phaser uses texture dims by default.
+        // We ensure it fits within 85% width and 55% height to leave room.
+        // Reduced by another 10% (1.51 * 0.9 = 1.36)
+        const s = Math.min((w * 0.85) / this.startInstructions.width, (h * 0.55) / this.startInstructions.height) * 1.36;
+        this.startInstructions.setScale(s);
+
+        if (this.startBtn) {
+          const instrHalfHeight = (this.startInstructions.height * s) / 2;
+          const instrBottom = this.startInstructions.y + instrHalfHeight;
+          this.startBtn.setPosition(w / 2 + 10, instrBottom + h * 0.08 - 80);
+          
+          const btnScale = Math.min(w * 0.35 / this.startBtn.width, h * 0.12 / this.startBtn.height);
+          this.startBtn.setScale(btnScale);
+        }
+      }
 
       // Reposition end screen elements on resize
       if (this.endCreditsImg) {
         this.endCreditsImg.setPosition(w / 2, h / 2);
         this.endCreditsImg.setDisplaySize(w, h);
       }
+      if (this.endOverlay) {
+        this.endOverlay.setSize(w, h);
+        this.endOverlay.setPosition(w / 2, h / 2); // Rectangle origin is 0.5,0.5 for endOverlay? Check creation.
+        // Created with x, y = w/2, h/2. Origin default is 0.5, 0.5 for Rectangle in Phaser 3?
+        // Actually factory add.rectangle defaults origin to 0.5.
+        // In create I used setOrigin(0,0) for darkOverlay.
+        // In showEndScreen I used defaults (0.5).
+      }
+
       if (this.visitBtnText) {
         this.visitBtnText.setPosition(w / 2, h * 0.8);
         if (this.visitBtnBg) this.visitBtnBg.setPosition(this.visitBtnText.x, this.visitBtnText.y);
@@ -284,10 +344,31 @@
           this.scale.startFullscreen();
         }
 
-
         if (this.motorcycleSound) {
           this.motorcycleSound.play();
         }
+        
+        // Hide Start Instructions and Button
+        if (this.startInstructions) {
+          this.startInstructions.setVisible(false);
+          this.startInstructions.setAlpha(0);
+        }
+        if (this.startBtn) {
+          this.startBtn.setVisible(false);
+        }
+        
+        // Fade out dark overlay
+        if (this.darkOverlay) {
+          this.tweens.add({
+            targets: this.darkOverlay,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              if (this.darkOverlay) this.darkOverlay.setVisible(false);
+            }
+          });
+        }
+
         this.updateHud("Go!");
         return;
       }
@@ -365,6 +446,21 @@
       if (this.bg) {
         this.bg.setVisible(true);
       }
+      
+      // Show Start Instructions and Button
+      if (this.startInstructions) {
+        this.startInstructions.setVisible(true);
+        this.startInstructions.setAlpha(1);
+      }
+      if (this.startBtn) {
+        this.startBtn.setVisible(true);
+      }
+      // Show Dark Overlay
+      if (this.darkOverlay) {
+        this.darkOverlay.setVisible(true);
+        this.darkOverlay.setAlpha(0.85);
+      }
+
       this.updateHud("Tap anywhere to start");
     }
 
@@ -384,6 +480,11 @@
     showEndScreen(won) {
       const w = this.scale.width;
       const h = this.scale.height;
+
+      // End Screen Overlay
+      this.endOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.85);
+      this.endOverlay.setDepth(350);
+      this.endOverlay.setAlpha(0);
 
       // Full screen end credits image
       this.endCreditsImg = this.add.image(w / 2, h / 2, "end_credits");
@@ -427,7 +528,7 @@
       });
 
       // Fade in everything together
-      const fadeTargets = [this.endCreditsImg, this.visitBtnBg, this.visitBtnText];
+      const fadeTargets = [this.endCreditsImg, this.visitBtnBg, this.visitBtnText, this.endOverlay];
 
       this.tweens.add({
         targets: fadeTargets,
@@ -437,6 +538,7 @@
     }
 
     hideEndScreen() {
+      if (this.endOverlay) { this.endOverlay.destroy(); this.endOverlay = null; }
       if (this.endCreditsImg) { this.endCreditsImg.destroy(); this.endCreditsImg = null; }
       if (this.endCreditsBox) { this.endCreditsBox.destroy(); this.endCreditsBox = null; }
       if (this.visitBtnBg) { this.visitBtnBg.destroy(); this.visitBtnBg = null; }
@@ -458,9 +560,16 @@
       const w = this.scale.width;
       const h = this.scale.height;
 
+      // Dark Overlay for End Instructions
+      const celebrationOverlay = this.add.rectangle(0, 0, w, h, 0x000000, 0.85);
+      celebrationOverlay.setOrigin(0, 0);
+      celebrationOverlay.setDepth(999); // Below instructions (1000)
+      celebrationOverlay.setAlpha(0);
+
       // Show end instructions during celebration
-      const endInstr = this.add.image(w / 2, h / 2, "end_instructions");
-      const instrScale = Math.min((w * 0.8) / endInstr.width, (h * 0.7) / endInstr.height);
+      const endInstr = this.add.image(w / 2, h / 2 + 50, "end_instructions");
+      // Increased by 50% from 0.84 -> 1.26
+      const instrScale = Math.min((w * 0.8) / endInstr.width, (h * 0.7) / endInstr.height) * 1.26;
       endInstr.setScale(instrScale);
       endInstr.setDepth(1000);
       endInstr.setAlpha(0);
@@ -468,11 +577,11 @@
       // Add tube image to the right of end instructions
       const tube = this.add.image(
         w / 2 + (endInstr.width * instrScale) / 2,
-        h / 2,
+        h / 2 + 50,
         "tube"
       );
-      // Scale tube relative to instructions (reduced by 30% from 0.8)
-      const tubeScale = instrScale * 0.56; 
+      // Scale tube relative to instructions (reduced by 20% from 0.56 -> 0.448)
+      const tubeScale = instrScale * 0.448; 
       tube.setScale(tubeScale);
       tube.setAngle(16);
       tube.setDepth(1001);
@@ -480,8 +589,22 @@
       // Offset slightly to the right so it's "right most"
       tube.x += (tube.width * tubeScale) * 0.3 - 20;
 
+      // Add logo on top of end instructions
+      const logo = this.add.image(
+        w / 2,
+        endInstr.y - (endInstr.height * instrScale) / 2, // Top edge of instructions
+        "sah_logo"
+      );
+      // Scale logo to reasonable width relative to instructions
+      // Reduced by another 30% (was 0.28 -> 0.196)
+      const logoScale = (endInstr.width * instrScale * 0.196) / logo.width; 
+      logo.setScale(logoScale);
+      logo.setOrigin(0.5, 0.7); // Bottom-ish anchor so it sits on top edge
+      logo.setDepth(1002);
+      logo.setAlpha(0);
+
       this.tweens.add({
-        targets: [endInstr, tube],
+        targets: [celebrationOverlay, endInstr, tube, logo],
         alpha: 1,
         duration: 500
       });
@@ -503,12 +626,14 @@
         
         // Fade out everything before credits
         this.tweens.add({
-          targets: [endInstr, tube],
+          targets: [celebrationOverlay, endInstr, tube, logo],
           alpha: 0,
           duration: 500,
           onComplete: () => {
+            celebrationOverlay.destroy();
             endInstr.destroy();
             tube.destroy();
+            logo.destroy();
             callback();
           }
         });
@@ -667,7 +792,8 @@
     }
 
     spawnEnemy() {
-      const sz = 60 + Math.random() * 20;
+      // Increased by 50% (was 60 + rand*20)
+      const sz = 90 + Math.random() * 30;
       const x = this.scale.width + 120;
       const y = this.groundY - sz / 2;
 
