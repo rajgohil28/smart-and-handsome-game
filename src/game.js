@@ -1017,6 +1017,7 @@
           this.score = Math.max(0, this.score - 3);
           this.updateHud("Cough! Cough!");
           this.showFloatingText("-3 Score");
+          this.blinkPlayer();
           
           this.tweens.add({
             targets: d,
