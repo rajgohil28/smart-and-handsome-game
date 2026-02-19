@@ -115,8 +115,8 @@
       this.load.image("virus", "assets/Images/Modern-bike-game/Enemy_Virus.png");
       this.load.image("virus_glow", "assets/Images/Modern-bike-game/Enemy_Glow.png");
 
-      this.load.image("end_credits", "assets/Images/End_Credits.jpeg");
-      this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions.png");
+      this.load.image("end_credits", "assets/Images/Modern-bike-game/New_End_Credits.jpg");
+      this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions_New.png");
       this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions_New.png");
       this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
