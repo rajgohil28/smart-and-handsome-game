@@ -61,6 +61,13 @@ body {
   font-family: "Press Start 2P", monospace;
 }
 
+.hud-logo {
+  height: clamp(39px, 10.4vh, 65px); /* Increased by 30% from clamp(30px, 8vh, 50px) */
+  width: auto;
+  align-self: flex-start;
+  /* margin-right: auto; Removed to allow space-between to center the middle element */
+}
+
 .hud-item {
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(5px);
@@ -76,9 +83,7 @@ body {
   min-width: 100px;
 }
 
-.hud-lives {
-  border-color: #ff4b2b;
-}
+/* .hud-lives { border-color: #ff4b2b; } Removed */
 
 .hud-label {
   font-size: 8px;
@@ -96,9 +101,7 @@ body {
   color: #7ce3b1;
 }
 
-.hud-lives .hud-value {
-  color: #ff4b2b;
-}
+/* .hud-lives .hud-value { color: #ff4b2b; } Removed */
 
 .hud-center {
   margin-top: 10px;

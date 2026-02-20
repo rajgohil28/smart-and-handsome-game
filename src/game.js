@@ -2,7 +2,7 @@
   "use strict";
 
   const scoreEl = document.getElementById("score");
-  const livesEl = document.getElementById("lives");
+  // const livesEl = document.getElementById("lives"); // Removed lives display
   const stateEl = document.getElementById("state");
   const overlay = document.getElementById("overlay");
   const startBtn = document.getElementById("start");
@@ -115,7 +115,7 @@
       this.load.image("virus", "assets/Images/Modern-bike-game/Enemy_Virus.png");
       this.load.image("virus_glow", "assets/Images/Modern-bike-game/Enemy_Glow.png");
 
-      this.load.image("end_credits", "assets/Images/Modern-bike-game/New_End_Credits.jpg");
+      this.load.image("end_credits", "assets/Images/Modern-bike-game/New_End_Credits_2.jpg");
       this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions_New.png");
       this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions_New.png");
       this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
@@ -714,11 +714,13 @@
         scoreEl.textContent = this.score;
         if (oldScore !== this.score) this.triggerPulse(scoreEl.parentElement);
       }
+      /* Removed lives display update
       if (livesEl) {
         const oldLives = parseInt(livesEl.textContent);
         livesEl.textContent = this.lives;
         if (oldLives !== this.lives) this.triggerPulse(livesEl.parentElement);
       }
+      */
       if (msg && stateEl) {
         stateEl.textContent = msg.toUpperCase();
       }
