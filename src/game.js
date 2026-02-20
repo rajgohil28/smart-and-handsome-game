@@ -356,7 +356,12 @@
       // Reposition end screen elements on resize
       if (this.endCreditsImg) {
         this.endCreditsImg.setPosition(w / 2, h / 2);
-        this.endCreditsImg.setDisplaySize(w, h);
+        
+        // Fit mode: contain
+        const imgW = this.endCreditsImg.width;
+        const imgH = this.endCreditsImg.height;
+        const scale = Math.min(w / imgW, h / imgH);
+        this.endCreditsImg.setScale(scale);
       }
       if (this.endOverlay) {
         this.endOverlay.setSize(w, h);
@@ -536,9 +541,14 @@
       this.endOverlay.setDepth(350);
       this.endOverlay.setAlpha(0);
 
-      // Full screen end credits image
+      // Full screen end credits image (contain, not stretch)
       this.endCreditsImg = this.add.image(w / 2, h / 2, "end_credits");
-      this.endCreditsImg.setDisplaySize(w, h);
+      
+      const imgW = this.endCreditsImg.width;
+      const imgH = this.endCreditsImg.height;
+      const scale = Math.min(w / imgW, h / imgH);
+      
+      this.endCreditsImg.setScale(scale);
       this.endCreditsImg.setDepth(400);
       this.endCreditsImg.setAlpha(0);
 
