@@ -122,7 +122,7 @@
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
       this.load.image("dust_obstacle", "assets/Images/Modern-bike-game/Dust.png");
-      this.load.image("shop_now_btn", "assets/Images/Modern-bike-game/shop_now_btn.png");
+      // this.load.image("shop_now_btn", "assets/Images/Modern-bike-game/shop_now_btn.png"); // Removed
     }
 
     create() {
@@ -560,10 +560,32 @@
       this.endCreditsImg.setDepth(400);
       this.endCreditsImg.setAlpha(0);
 
-      // Shop Now Button (Image)
-      this.shopBtn = this.add.image(0, 0, "shop_now_btn");
+      // Shop Now Button (Programmatic Container)
+      const btnW = 200;
+      const btnH = 60;
+      
+      this.shopBtn = this.add.container(0, 0);
       this.shopBtn.setDepth(415);
       this.shopBtn.setAlpha(0);
+      
+      const btnBg = this.add.graphics();
+      // Draw border (grey)
+      btnBg.fillStyle(0x999999, 1);
+      btnBg.fillRoundedRect(-btnW/2 - 2, -btnH/2 - 2, btnW + 4, btnH + 4, 12);
+      // Draw main yellow button
+      btnBg.fillStyle(0xffbd03, 1); // Yellow-Orange
+      btnBg.fillRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
+      
+      const btnText = this.add.text(0, 0, "SHOP NOW", {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '28px',
+        fontStyle: 'bold',
+        color: '#000000'
+      });
+      btnText.setOrigin(0.5);
+      
+      this.shopBtn.add([btnBg, btnText]);
+      this.shopBtn.setSize(btnW, btnH);
       this.shopBtn.setInteractive({ useHandCursor: true });
       
       const btnX = w / 2 + (imgW * scale) * 0.35; 
