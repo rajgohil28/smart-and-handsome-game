@@ -122,7 +122,7 @@
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
       this.load.image("dust_obstacle", "assets/Images/Modern-bike-game/Dust.png");
-      // this.load.image("shop_now_btn", "assets/Images/Modern-bike-game/shop_now_btn.png"); // Removed
+      this.load.image("shop_now_btn_new", "assets/Images/Modern-bike-game/shopnow_button.png");
     }
 
     create() {
@@ -368,7 +368,8 @@
           const btnX = w / 2 + (imgW * scale) * 0.35; 
           const btnY = h / 2 + (imgH * scale) * 0.35;
           this.shopBtn.setPosition(btnX, btnY);
-          this.shopBtn.setScale(scale * 0.8);
+          this.shopBtn.baseScale = scale * 0.8 * 3; // 3X bigger
+          this.shopBtn.setScale(this.shopBtn.baseScale);
         }
       }
       if (this.endOverlay) {
@@ -560,41 +561,22 @@
       this.endCreditsImg.setDepth(400);
       this.endCreditsImg.setAlpha(0);
 
-      // Shop Now Button (Programmatic Container)
-      const btnW = 200;
-      const btnH = 60;
-      
-      this.shopBtn = this.add.container(0, 0);
+      // Shop Now Button (Image)
+      this.shopBtn = this.add.image(0, 0, "shop_now_btn_new");
       this.shopBtn.setDepth(415);
       this.shopBtn.setAlpha(0);
-      
-      const btnBg = this.add.graphics();
-      // Draw border (grey)
-      btnBg.fillStyle(0x999999, 1);
-      btnBg.fillRoundedRect(-btnW/2 - 2, -btnH/2 - 2, btnW + 4, btnH + 4, 12);
-      // Draw main yellow button
-      btnBg.fillStyle(0xffbd03, 1); // Yellow-Orange
-      btnBg.fillRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
-      
-      const btnText = this.add.text(0, 0, "SHOP NOW", {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '28px',
-        fontStyle: 'bold',
-        color: '#000000'
-      });
-      btnText.setOrigin(0.5);
-      
-      this.shopBtn.add([btnBg, btnText]);
-      this.shopBtn.setSize(btnW, btnH);
       this.shopBtn.setInteractive({ useHandCursor: true });
       
       const btnX = w / 2 + (imgW * scale) * 0.35; 
       const btnY = h / 2 + (imgH * scale) * 0.35;
       this.shopBtn.setPosition(btnX, btnY);
-      this.shopBtn.setScale(scale * 0.8);
+      
+      // Use original image scale logic but maybe slightly adjusted
+      this.shopBtn.baseScale = scale * 0.8 * 3; // 3X bigger
+      this.shopBtn.setScale(this.shopBtn.baseScale);
 
-      this.shopBtn.on("pointerover", () => this.shopBtn.setScale(scale * 0.85)); 
-      this.shopBtn.on("pointerout", () => this.shopBtn.setScale(scale * 0.8));
+      this.shopBtn.on("pointerover", () => this.shopBtn.setScale(this.shopBtn.baseScale * 1.0625)); 
+      this.shopBtn.on("pointerout", () => this.shopBtn.setScale(this.shopBtn.baseScale));
       this.shopBtn.on("pointerdown", () => {
         window.location.href = "https://www.amazon.in/dp/B0B4GYZ4FR?th=1&ref_=smebfive";
       });
