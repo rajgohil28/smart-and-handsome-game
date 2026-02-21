@@ -584,7 +584,7 @@
       this.visitBtnBg.on("pointerover", () => this.visitBtnBg.setFillStyle(0xa83520));
       this.visitBtnBg.on("pointerout", () => this.visitBtnBg.setFillStyle(0xc6422c));
       this.visitBtnBg.on("pointerdown", () => {
-        window.location.href = "https://www.emamiltd.in/brands/smart-and-handsome/";
+        window.location.href = "https://www.amazon.in/dp/B0B4GYZ4FR?th=1&ref_=smebfive";
       });
 
       // Fade in everything together
