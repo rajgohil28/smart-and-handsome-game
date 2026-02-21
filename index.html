@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.0.8" />
+    <link rel="stylesheet" href="styles.css?v=2.0.11" />
     <!-- Phaser 3 for HTML5 2D creative (local, no CDN) -->
     <script src="assets/phaser.min.js"></script>
     <!-- Lottie for celebrations -->
@@ -39,9 +39,17 @@
           </div>
         </div>
 
-        <div class="hud-item hud-score">
-          <span class="hud-label">SCORE</span>
-          <span id="score" class="hud-value">0</span>
+        <div class="hud-right">
+          <div class="hud-item hud-lives">
+            <span class="hud-label">LIVES</span>
+            <div id="lives-container" class="hud-value hud-hearts">
+              <span id="lives">2</span>
+            </div>
+          </div>
+          <div class="hud-item hud-score">
+            <span class="hud-label">SCORE</span>
+            <span id="score" class="hud-value">0</span>
+          </div>
         </div>
       </div>
       <div class="overlay" id="overlay" style="pointer-events: none;">
@@ -57,6 +65,6 @@
         </div>
       </div>
     </main>
-    <script src="src/game.js?v=2.0.8"></script>
+    <script src="src/game.js?v=2.0.10"></script>
   </body>
 </html>

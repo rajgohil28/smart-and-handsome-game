@@ -2,7 +2,7 @@
   "use strict";
 
   const scoreEl = document.getElementById("score");
-  // const livesEl = document.getElementById("lives"); // Removed lives display
+  const livesEl = document.getElementById("lives");
   const stateEl = document.getElementById("state");
   const overlay = document.getElementById("overlay");
   const startBtn = document.getElementById("start");
@@ -115,13 +115,14 @@
       this.load.image("virus", "assets/Images/Modern-bike-game/Enemy_Virus.png");
       this.load.image("virus_glow", "assets/Images/Modern-bike-game/Enemy_Glow.png");
 
-      this.load.image("end_credits", "assets/Images/Modern-bike-game/New_End_Credits_2.jpg");
+      this.load.image("end_credits", "assets/Images/Modern-bike-game/New_End_Credits_2.png");
       this.load.image("end_instructions", "assets/Images/Modern-bike-game/End_Instructions_New.png");
       this.load.image("start_instructions", "assets/Images/Modern-bike-game/Start_Instructions_New.png");
       this.load.image("start_btn", "assets/Images/Modern-bike-game/Start_btn.png");
       this.load.image("sah_logo", "assets/Images/SAH_LOGO.png");
       this.load.image("tube", "assets/Images/S&H_Tube.png");
       this.load.image("dust_obstacle", "assets/Images/Modern-bike-game/Dust.png");
+      this.load.image("shop_now_btn", "assets/Images/Modern-bike-game/shop_now_btn.png");
     }
 
     create() {
@@ -362,6 +363,13 @@
         const imgH = this.endCreditsImg.height;
         const scale = Math.min(w / imgW, h / imgH);
         this.endCreditsImg.setScale(scale);
+
+        if (this.shopBtn) {
+          const btnX = w / 2 + (imgW * scale) * 0.35; 
+          const btnY = h / 2 + (imgH * scale) * 0.35;
+          this.shopBtn.setPosition(btnX, btnY);
+          this.shopBtn.setScale(scale * 0.8);
+        }
       }
       if (this.endOverlay) {
         this.endOverlay.setSize(w, h);
@@ -372,9 +380,9 @@
         // In showEndScreen I used defaults (0.5).
       }
 
-      if (this.visitBtnText) {
-        this.visitBtnText.setPosition(w / 2, h * 0.8);
-        if (this.visitBtnBg) this.visitBtnBg.setPosition(this.visitBtnText.x, this.visitBtnText.y);
+      if (this.endClickArea) {
+        this.endClickArea.setSize(w, h);
+        this.endClickArea.setPosition(w / 2, h / 2);
       }
     }
 
@@ -552,43 +560,33 @@
       this.endCreditsImg.setDepth(400);
       this.endCreditsImg.setAlpha(0);
 
-      // Buttons container or positioning
-      const btnFontSize = Math.max(16, Math.round(w * 0.02));
-      const padX = btnFontSize * 2;
-      const padY = btnFontSize * 1.2;
+      // Shop Now Button (Image)
+      this.shopBtn = this.add.image(0, 0, "shop_now_btn");
+      this.shopBtn.setDepth(415);
+      this.shopBtn.setAlpha(0);
+      this.shopBtn.setInteractive({ useHandCursor: true });
+      
+      const btnX = w / 2 + (imgW * scale) * 0.35; 
+      const btnY = h / 2 + (imgH * scale) * 0.35;
+      this.shopBtn.setPosition(btnX, btnY);
+      this.shopBtn.setScale(scale * 0.8);
 
-      // "Visit Site" button
-      this.visitBtnText = this.add.text(w / 2, h * 0.8, "VISIT SITE", {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: btnFontSize + "px",
-        fontStyle: "bold",
-        color: "#ffffff",
-        align: "center",
-        stroke: '#000000',
-        strokeThickness: 4
+      this.shopBtn.on("pointerover", () => this.shopBtn.setScale(scale * 0.85)); 
+      this.shopBtn.on("pointerout", () => this.shopBtn.setScale(scale * 0.8));
+      this.shopBtn.on("pointerdown", () => {
+        window.location.href = "https://www.amazon.in/dp/B0B4GYZ4FR?th=1&ref_=smebfive";
       });
-      this.visitBtnText.setOrigin(0.5);
-      this.visitBtnText.setDepth(404);
-      this.visitBtnText.setAlpha(0);
 
-      this.visitBtnBg = this.add.rectangle(
-        this.visitBtnText.x, this.visitBtnText.y,
-        this.visitBtnText.width + padX,
-        this.visitBtnText.height + padY,
-        0xc6422c
-      );
-      this.visitBtnBg.setOrigin(0.5);
-      this.visitBtnBg.setDepth(403);
-      this.visitBtnBg.setAlpha(0);
-      this.visitBtnBg.setInteractive({ useHandCursor: true });
-      this.visitBtnBg.on("pointerover", () => this.visitBtnBg.setFillStyle(0xa83520));
-      this.visitBtnBg.on("pointerout", () => this.visitBtnBg.setFillStyle(0xc6422c));
-      this.visitBtnBg.on("pointerdown", () => {
+      // Interactive click area for the whole screen
+      this.endClickArea = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0);
+      this.endClickArea.setDepth(410);
+      this.endClickArea.setInteractive({ useHandCursor: true });
+      this.endClickArea.on("pointerdown", () => {
         window.location.href = "https://www.amazon.in/dp/B0B4GYZ4FR?th=1&ref_=smebfive";
       });
 
       // Fade in everything together
-      const fadeTargets = [this.endCreditsImg, this.visitBtnBg, this.visitBtnText, this.endOverlay];
+      const fadeTargets = [this.endCreditsImg, this.endOverlay, this.shopBtn];
 
       this.tweens.add({
         targets: fadeTargets,
@@ -600,9 +598,8 @@
     hideEndScreen() {
       if (this.endOverlay) { this.endOverlay.destroy(); this.endOverlay = null; }
       if (this.endCreditsImg) { this.endCreditsImg.destroy(); this.endCreditsImg = null; }
-      if (this.endCreditsBox) { this.endCreditsBox.destroy(); this.endCreditsBox = null; }
-      if (this.visitBtnBg) { this.visitBtnBg.destroy(); this.visitBtnBg = null; }
-      if (this.visitBtnText) { this.visitBtnText.destroy(); this.visitBtnText = null; }
+      if (this.shopBtn) { this.shopBtn.destroy(); this.shopBtn = null; }
+      if (this.endClickArea) { this.endClickArea.destroy(); this.endClickArea = null; }
 
       // Hide lottie container if it's active
       if (lottieContainer) {
@@ -714,13 +711,11 @@
         scoreEl.textContent = this.score;
         if (oldScore !== this.score) this.triggerPulse(scoreEl.parentElement);
       }
-      /* Removed lives display update
       if (livesEl) {
         const oldLives = parseInt(livesEl.textContent);
         livesEl.textContent = this.lives;
         if (oldLives !== this.lives) this.triggerPulse(livesEl.parentElement);
       }
-      */
       if (msg && stateEl) {
         stateEl.textContent = msg.toUpperCase();
       }

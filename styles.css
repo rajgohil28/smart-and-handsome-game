@@ -52,7 +52,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  padding: 20px 30px;
+  padding: 20px 40px; /* Matched left padding to overlay logo left: 40px */
   display: none; /* Hidden by default, shown by JS when game starts */
   justify-content: space-between;
   align-items: flex-start;
@@ -62,8 +62,8 @@ body {
 }
 
 .hud-logo {
-  height: clamp(39px, 10.4vh, 65px); /* Increased by 30% from clamp(30px, 8vh, 50px) */
-  width: auto;
+  height: auto;
+  width: clamp(120px, 28vh, 320px); /* Matched size with overlay-logo-img */
   align-self: flex-start;
   /* margin-right: auto; Removed to allow space-between to center the middle element */
 }
@@ -83,7 +83,9 @@ body {
   min-width: 100px;
 }
 
-/* .hud-lives { border-color: #ff4b2b; } Removed */
+.hud-lives {
+  border-color: #ff4b2b;
+}
 
 .hud-label {
   font-size: 8px;
@@ -101,7 +103,9 @@ body {
   color: #7ce3b1;
 }
 
-/* .hud-lives .hud-value { color: #ff4b2b; } Removed */
+.hud-lives .hud-value {
+  color: #ff4b2b;
+}
 
 .hud-center {
   margin-top: 10px;
@@ -113,6 +117,12 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.hud-right {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
 }
 
 .energy-bar-container {
